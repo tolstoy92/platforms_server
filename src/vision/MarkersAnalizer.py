@@ -21,6 +21,7 @@ class MarkersAnalizer:
 
     def objects_callback(self, msg_data):
         msg = self.prepare_msgs(msg_data)
+        print(msg)
         self.publisher.publish(msg)
 
     def paths_callback(self, msg_data):

@@ -5,7 +5,7 @@ from sensor_msgs.msg import Image
 from cv_bridge import CvBridge, CvBridgeError
 from platforms_server.msg import FieldObjects as FieldObjects_msg, AllPathes
 from vision.vision_constants import IMAGE_SIZE, MAP_ROWS, MAP_COLUMNS
-from vision.Fileds_objects import Point
+from vision.geometry_utils import Point
 
 
 class Visualizer():
@@ -74,22 +74,25 @@ class Visualizer():
                         #         (int(robot.actual_point.x), int(robot.actual_point.y)), color=(255, 100, 255), thickness=1)
                     if robot.finish_heading_point:
                         self.draw_point(robot.finish_heading_point)
-                    if robot.right_wheel and robot.left_wheel:
-                        self.draw_point(robot.right_wheel, color=(255, 255, 255), size=8)
-                        self.draw_point(robot.left_wheel, color=(255, 255, 255))
+                    if robot.wheels_pair:
+                        self.draw_point(robot.wheels_pair.right_wheel.center, color=(255, 255, 255), size=8)
+                        self.draw_point(robot.wheels_pair.left_wheel.center, color=(255, 255, 255))
 
-                        # print(robot.left_wheel_edge1)
+                        self.draw_point(robot.wheels_pair.right_wheel.front_side_point, color=(50, 250, 50), size=20)
+                        self.draw_point(robot.wheels_pair.right_wheel.back_side_point, color=(50, 250, 50), size=10)
 
-                        # self.draw_point(robot.right_wheel_edge1, color=(50, 250, 50), size=20)
-                        # self.draw_point(robot.right_wheel_edge2, color=(50, 250, 50), size=10)
-                        #
-                        # self.draw_point(robot.left_wheel_edge1, color=(50, 50, 250), size=20)
-                        # self.draw_point(robot.left_wheel_edge2, color=(50, 50, 250), size=10)
+                        self.draw_point(robot.wheels_pair.left_wheel.front_side_point, color=(50, 50, 250), size=20)
+                        self.draw_point(robot.wheels_pair.left_wheel.back_side_point, color=(50, 50, 250), size=10)
 
-                        # cv2.line(self.IMG, (int(robot.right_wheel_edge1.x), int(robot.right_wheel_edge1.y)),
-                        #          (int(robot.right_wheel_edge2.x), int(robot.right_wheel_edge2.y)), (0, 255, 0), 2)
-                        # cv2.line(self.IMG, (int(robot.left_wheel_edge1.x), int(robot.left_wheel_edge1.y)),
-                        #      (int(robot.left_wheel_edge2.x), int(robot.left_wheel_edge2.y)), (0, 255, 0), 2)
+                        cv2.line(self.IMG, (int(robot.wheels_pair.right_wheel.front_side_point.x),
+                                            int(robot.wheels_pair.right_wheel.front_side_point.y)),
+                                 (int(robot.wheels_pair.right_wheel.back_side_point.x),
+                                  int(robot.wheels_pair.right_wheel.back_side_point.y)), (0, 255, 0), 2)
+
+                        cv2.line(self.IMG, (int(robot.wheels_pair.left_wheel.front_side_point.x),
+                                            int(robot.wheels_pair.left_wheel.front_side_point.y)),
+                                 (int(robot.wheels_pair.left_wheel.back_side_point.x),
+                                  int(robot.wheels_pair.left_wheel.back_side_point.y)), (0, 255, 0), 2)
 
             for obstacle in self.fields_objects.obstacles:
                 self.draw_point(obstacle.center)

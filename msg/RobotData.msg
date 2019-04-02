@@ -12,12 +12,7 @@ Point2d                 finish_heading_point
 int32                   angle_to_heading_point
 geometry_msgs/Point     real_world_position
 
-Point2d                 right_wheel
-Point2d                 left_wheel
-Point2d                 right_wheel_edge1
-Point2d                 right_wheel_edge2
-Point2d                 left_wheel_edge1
-Point2d                 left_wheel_edge2
+Wheels_pair             wheels_pair
 
 bool                    path_created
 bool                    on_finish_point

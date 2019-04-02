@@ -7,7 +7,7 @@ import rospy
 from time import sleep
 from random import randint
 from sensor_msgs.msg import Image
-from vision.Fileds_objects import Point
+from vision.geometry_utils import Point
 from cv_bridge import CvBridge, CvBridgeError
 from platforms_server.msg import AllPathes, Path, FieldObjects as FieldObjects_msg
 
