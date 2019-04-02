@@ -1,0 +1,29 @@
+int32                   id
+Point2d                 center
+Point2d                 direction
+Point2d[]               corners
+Point2d[]               path
+Point2d                 actual_point
+Point2d                 next_point
+float32                 angle_to_actual_point
+float32                 actual_angle
+int32[]                 sector
+Point2d                 finish_heading_point
+int32                   angle_to_heading_point
+geometry_msgs/Point     real_world_position
+
+Point2d                 right_wheel
+Point2d                 left_wheel
+Point2d                 right_wheel_edge1
+Point2d                 right_wheel_edge2
+Point2d                 left_wheel_edge1
+Point2d                 left_wheel_edge2
+
+bool                    path_created
+bool                    on_finish_point
+bool                    on_finish_heading
+bool                    move
+bool                    rotation
+bool                    stop
+
+

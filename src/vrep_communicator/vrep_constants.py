@@ -1,0 +1,15 @@
+CON_ADDRESS = '127.0.0.1'
+CON_PORT = 19999
+TIMEOUT_IN_MS = 5000
+COMM_THREAD_CYCLE_IN_MS = 5
+ROBOTS_NAMES_TREE = 'startConfigurations'
+TARGETS_NAMES_TREE = 'goalConfigurations'
+OBSTACLES_NAMES_TREE = 'OuterWalls'
+WITH_DYNAMIC_OBSTACLES = False
+
+ROTATION_SPEED = 0.1
+kp = 0.1
+ki = 0.0001
+kd = 0.0009
+iMin = -0.2
+iMax = 0.2
