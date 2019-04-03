@@ -1,4 +1,5 @@
 from math import sqrt, acos, degrees
+import numpy as np
 # from vision.Fileds_objects import Point
 from vision.vision_constants import IMAGE_SIZE, HIGH_BOUNDS, LOW_BOUNDS, EPS, ANGLE_EPS, MARKER_SIZE, ROBOT_SIZE, WHEEL_SIZE
 
@@ -9,7 +10,6 @@ def get_line_cntr(pt1, pt2):
     return Point(line_cntr[0], line_cntr[1])
 
 def get_distance_between_points(pt1, pt2):
-    print(pt1.x, pt2.x)
     return sqrt((pt1.x - pt2.x) ** 2 + (pt1.y - pt2.y) ** 2)
 
 def get_vector_coords(start_pt, end_pt):
@@ -65,6 +65,14 @@ def get_projection_of_pt_on_line(point, line_point1, line_point2):
     else:
         projection.y = (projection.x - line_point1.x) * (line_point2.y - line_point1.y) / 1 + line_point1.y
     return projection
+
+def get_line_equation(pt1, pt2):
+    # y = kx + b
+    a = np.array([[pt1.x, 1], [pt2.x, 1]])
+    b = np.array([pt1.y, pt2.y])
+    k, b = np.linalg.solve(a, b)
+    return k, b
+
 
 class Point:
     def __init__(self, x=None, y=None):

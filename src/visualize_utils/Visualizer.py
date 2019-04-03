@@ -114,7 +114,6 @@ class Visualizer():
 
     def draw_paths(self):
         if self.pathes:
-            print(self.pathes)
             for path in self.pathes.paths_list:
                 for pt in path.path_points:
                     self.draw_point(pt, size=5)

@@ -35,8 +35,8 @@ while RUN and not rospy.is_shutdown():
     ret, img = stream.read()
     if ret:
         square_img = resize_image_to_square_size(img)
-        # resized_sqaure_img = cv2.resize(square_img, (IMAGE_SIZE, IMAGE_SIZE))
         resized_sqaure_img = square_img
+        resized_sqaure_img = cv2.resize(square_img, (IMAGE_SIZE, IMAGE_SIZE))
         image_message = cv_bridge.cv2_to_imgmsg(resized_sqaure_img, "bgr8")
         image_publisher.publish(image_message)
         if cv2.waitKey(CV_WAITKEY) & 0xFF == 27:

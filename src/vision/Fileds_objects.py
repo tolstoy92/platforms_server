@@ -1,7 +1,7 @@
 from numpy import array
 from copy import deepcopy
 from matplotlib.path import Path
-from math import degrees, sqrt, acos, tan, radians, cos, sin, atan
+from math import degrees, sqrt, acos, tan, radians, cos, sin, atan, asin
 from platforms_server.msg import RobotData, GoalData, ObstacleData, Point2d, Wheel as Wheel_msg
 from vision.vision_constants import IMAGE_SIZE, HIGH_BOUNDS, LOW_BOUNDS, EPS, ANGLE_EPS, MARKER_SIZE, ROBOT_SIZE, WHEEL_SIZE
 from vision.geometry_utils import *
@@ -99,6 +99,7 @@ class Robot(Marker):
 
         self.direction = self.get_direction()
         self.path = []
+        self.connection_path = []
 
         self.actual_point = Point()
         self.next_point = Point()
@@ -232,7 +233,7 @@ class Robot(Marker):
                 try:
                     self.next_point = self.path[0]
                 except:
-                    self.next_point = self.next_point.set_xy(None, None)
+                    self.next_point = Point()
             except:
                 self.on_finish_point = True
 
@@ -480,6 +481,73 @@ class Wheels_pair():
                 self.right_wheel.front_side_point = Point(self.right_wheel.center.x - ddx,
                                                           self.right_wheel.center.y - ddy)
 
+class ConnectionPath():
+    def __init__(self, robot1, robot2):
+        self.robot1 = robot1      # TODO: смена мест роботов!
+        self.robot2 = robot2
+        self.connection_distanse_in_meters = 0.02 + ROBOT_SIZE
+        self.connection_distanse_in_pix = self.connection_distanse_in_meters / \
+                                          get_meters_in_pix(MARKER_SIZE, self.robot1.corners)
+
+    def is_robots_too_close(self):
+        half_robots_size_in_pix = (ROBOT_SIZE/2) / get_meters_in_pix(MARKER_SIZE, self.robot1.corners)
+        if get_distance_between_points(self.robot1.center, self.robot2.center) <\
+                half_robots_size_in_pix * 2 + self.connection_distanse_in_pix:
+            return True
+        else:
+            return False
+
+    def create_connection_points(self):
+        if not self.is_robots_too_close():
+            alpha = self.find_angle_for_connection_points()
+            robot1_eq, robot2_eq = self.get_equations_for_robots_pair(alpha)
+            k, b1, b2 = robot1_eq[0], robot1_eq[1], robot2_eq[1]
+            d1, d2 = self.get_connection_dx_dy(k, b1, b2)
+            r1_f_point = Point((self.robot1.center.x + d1.x)/2, (self.robot1.center.y + d1.y)/2)
+            r2_f_point = Point((self.robot2.center.x + d2.x)/2, (self.robot2.center.y + d2.y)/2)
+
+            print('DDD {}'.format(get_meters_in_pix(MARKER_SIZE, self.robot1.corners)*get_distance_between_points(r1_f_point, r2_f_point)))
+
+            return r1_f_point, r2_f_point
+
+
+    def find_angle_for_connection_points(self):
+        distance_between_robots = get_distance_between_points(self.robot1.center, self.robot2.center)
+
+        sin_alpha1 = self.connection_distanse_in_pix / distance_between_robots
+        alpha1 = degrees(asin(sin_alpha1))
+        print('1111', alpha1)
+
+        if self.robot1.center.x <= self.robot2.center.x:
+            d = 5
+        else:
+            d = -5
+
+        alpha2 = get_angle_by_3_points(self.robot2.center,
+                                       Point(self.robot1.center.x+d, self.robot1.center.y),
+                                       self.robot1.center)
+        return alpha1 + alpha2
+
+    def get_equations_for_robots_pair(self, alpha):
+        k = tan(radians(alpha))
+        print('k {}'.format(k))
+        robot1_b = self.robot1.center.y - k * (self.robot1.center.x)
+        robot2_b = self.robot2.center.y - k * (self.robot2.center.x)
+        robot1_eq, robot2_eq = [k, robot1_b], [k, robot2_b]
+        print('b1, b2 = {},   {}'.format(robot1_b, robot2_b))
+
+        return robot1_eq, robot2_eq
+
+    def get_connection_dx_dy(self, k, b1, b2):
+        robot1_final_point = Point((self.robot2.center.y - b1)/k , self.robot2.center.y)
+        robot2_final_point = Point((self.robot1.center.y - b2) / k, self.robot1.center.y)
+        print('robot1_final_point, robot2_final_point= {}, {}'.format(robot1_final_point, robot2_final_point))
+        half_distance = get_distance_between_points(self.robot1.center, robot1_final_point)
+        connection_dy = sqrt(abs(half_distance**2 - (b1 - b2)**2))
+        connection_dx = abs(b1 - b2)
+        print('connection_dx, connection_dy = {}, {}'.format(connection_dx,connection_dy))
+        # return abs(connection_dx), abs(connection_dy)
+        return robot1_final_point, robot2_final_point
 class Obstacle:
     def __init__(self, id, marker_list):
         self.id = id

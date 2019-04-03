@@ -2,7 +2,7 @@ import numpy as np
 from collections import namedtuple
 
 
-CAMERA_INDEX = 0
+CAMERA_INDEX = 1
 
 IMAGE_SIZE = 720
 CV_WAITKEY = 10
@@ -16,7 +16,7 @@ MAP_ROWS = 7
 MAP_COLUMNS = 7
 
 MARKER_SIZE = 0.02
-ROBOT_SIZE = 0.21
+ROBOT_SIZE = 0.05
 WHEEL_SIZE = 0.065
 
 # cam_parametrs = np.load('/home/ivan/Documents/platforms_ws/src/mobile_platforms_ROS/src/vision/960x720_web_cam.npz')
