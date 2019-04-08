@@ -2,7 +2,7 @@
     <node pkg="platforms_server" name="aruco_detector_node" type="aruco_detector_node.py" output="screen"/>
     <node pkg="platforms_server" name="camera_node" type="camera_node.py" output="screen"/>
     <node pkg="platforms_server" name="markers_analizer_node" type="markers_analizer_node.py" output="screen"/>
-    <node pkg="platforms_server" name="test_connection_node" type="test_connection_node.py" output="screen"/>
+    <node pkg="platforms_server" name="test_t_connection_node" type="test_t_connection_node.py" output="screen"/>
     <node pkg="platforms_server" name="visualizer_node" type="visualizer_node.py" output="screen"/>
     <node pkg="platforms_server" name="mqtt_node" type="mqtt_node.py" output="screen"/>
 </launch>

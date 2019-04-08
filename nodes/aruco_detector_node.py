@@ -17,7 +17,7 @@ from platforms_server.msg import ArucoData, MarkerData, Point2d
 def corners_to_msg(corners):
     corners_msgs_list = []
     for corner in corners:
-        corners_msg = list(Point2d(x, y) for x, y in corner[0])
+        corners_msg = list(Point2d(x, y, False) for x, y in corner[0])
         corners_msgs_list.append(corners_msg)
     return corners_msgs_list
 

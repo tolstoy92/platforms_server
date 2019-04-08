@@ -87,9 +87,10 @@ def get_crossing_lines_point(eq1, eq2):
     return Point(x, y)
 
 class Point:
-    def __init__(self, x=None, y=None):
+    def __init__(self, x=None, y=None, heading=False):
         self.x = x
         self.y = y
+        self.heading = heading
 
     def __str__(self):
         return str(self.x) + " " + str(self.y)
@@ -113,6 +114,12 @@ class Point:
     def is_empty(self):
         if self.x and self.y: return False
         else: return True
+
+    def is_heading_point(self):
+        if self.heading_point:
+            return True
+        else:
+            return False
 
     def get_distance_to(self, point):
         return sqrt((point.x - self.x) ** 2 + (point.y - self.y) ** 2)

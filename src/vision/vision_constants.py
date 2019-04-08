@@ -17,9 +17,9 @@ MAP_COLUMNS = 7
 
 
 MARKER_SIZE = 0.02
-ROBOT_SIZE = 0.10
-# ROBOT_H = 0.02
-WHEEL_SIZE = 0.04
+ROBOT_SIZE = 0.08
+ROBOT_H = 0.03
+WHEEL_SIZE = 0.03
 
 CONNECTION_DISTANCE = 0.02
 # cam_parametrs = np.load('/home/ivan/Documents/platforms_ws/src/mobile_platforms_ROS/src/vision/960x720_web_cam.npz')
