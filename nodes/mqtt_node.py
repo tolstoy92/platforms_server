@@ -25,7 +25,7 @@ def mqtt_callback(msg_data):
             angle_msg = msg_sender.prepare_angle_msg(robot.actual_angle)
             move_msg = msg_sender.prepare_move_msg(robot.move)
             rotate_msg = msg_sender.prepare_rotation(robot.rotation)
-            finish_status = robot.on_finish_point and robot.on_finish_heading
+            finish_status = robot.on_finish_point
             finish_msg = msg_sender.prepare_finish_msg(finish_status)
 
             final_msg = angle_msg + move_msg + rotate_msg + finish_msg

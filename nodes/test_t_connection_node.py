@@ -41,6 +41,7 @@ def obj_callback(msg_data):
                 riding_robot_conn_point = connection_path_creator.get_riding_robot_connection_point()
                 connection_path_creator.check(riding_robot_conn_point, base_robot.center)
                 r1_path_msg = create_msg(base_robot.id, [base_robot_heading_point])
+                print('base: {}'.format(base_robot_heading_point.is_heading))
                 r2_path_msg = create_msg(riding_robot.id, [riding_robot_conn_point])
                 final_msg.paths_list.append(r1_path_msg)
                 final_msg.paths_list.append(r2_path_msg)

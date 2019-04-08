@@ -10,18 +10,18 @@ CV_WAITKEY = 10
 LOW_BOUNDS = -5.    # bound fot ompl remapping
 HIGH_BOUNDS = 5.    # bound fot ompl remapping
 EPS = 20
-ANGLE_EPS = 3
+ANGLE_EPS = 5
 
 MAP_ROWS = 7
 MAP_COLUMNS = 7
 
 
 MARKER_SIZE = 0.02
-ROBOT_SIZE = 0.08
+ROBOT_SIZE = 0.05
 ROBOT_H = 0.03
-WHEEL_SIZE = 0.03
+WHEEL_SIZE = 0.02
 
-CONNECTION_DISTANCE = 0.02
+CONNECTION_DISTANCE = 0.01
 # cam_parametrs = np.load('/home/ivan/Documents/platforms_ws/src/mobile_platforms_ROS/src/vision/960x720_web_cam.npz')
 # MTX = cam_parametrs['mtx']
 # DIST = cam_parametrs['dist']

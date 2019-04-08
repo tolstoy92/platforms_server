@@ -59,8 +59,8 @@ class Visualizer():
                 for pt in robot.path:
                     self.draw_point(pt, size=8)
                 self.draw_point(robot.direction, color=(50, 50, 250), size=5)
-                cv2.line(self.IMG, (int(robot.center.x), int(robot.center.y)),
-                         (int(robot.direction.x), int(robot.direction.y)), color=(100, 100, 255), thickness=3)
+                # cv2.line(self.IMG, (int(robot.center.x), int(robot.center.y)),
+                #          (int(robot.direction.x), int(robot.direction.y)), color=(100, 100, 255), thickness=3)
                 cv2.putText(self.IMG, str(robot.id), (int(robot.center.x) + 5, int(robot.center.y)),
                             cv2.FONT_HERSHEY_PLAIN, 2,
                             (255, 100, 60), 3)
@@ -94,14 +94,14 @@ class Visualizer():
                              (int(robot.wheels_pair.left_wheel.back_side_point.x),
                               int(robot.wheels_pair.left_wheel.back_side_point.y)), (0, 255, 0), 2)
 
-            for obstacle in self.fields_objects.obstacles:
-                self.draw_point(obstacle.center)
-                for c in obstacle.corners:
-                    self.draw_point(c, size=5)
-            for goal in self.fields_objects.goals:
-                self.draw_point(goal.center)
-                for c in goal.corners:
-                    self.draw_point(c, size=5)
+            # for obstacle in self.fields_objects.obstacles:
+            #     self.draw_point(obstacle.center)
+            #     for c in obstacle.corners:
+            #         self.draw_point(c, size=5)
+            # for goal in self.fields_objects.goals:
+            #     self.draw_point(goal.center)
+            #     for c in goal.corners:
+            #         self.draw_point(c, size=5)
 
     def draw_crest(self, point, color=(0, 0, 255)):
         line_size = 10
