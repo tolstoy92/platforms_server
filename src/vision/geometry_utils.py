@@ -87,10 +87,10 @@ def get_crossing_lines_point(eq1, eq2):
     return Point(x, y)
 
 class Point:
-    def __init__(self, x=None, y=None, heading=False):
+    def __init__(self, x=None, y=None, is_heading=False):
         self.x = x
         self.y = y
-        self.heading = heading
+        self.is_heading = is_heading
 
     def __str__(self):
         return str(self.x) + " " + str(self.y)

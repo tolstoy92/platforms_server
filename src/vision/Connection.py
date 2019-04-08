@@ -78,8 +78,8 @@ class TConnection(ParallelConnection):
         return self.base_robot, self.riding_robot
 
     def find_base_robot_heading_points(self):
-        base_robot_heading_point1 = Point(heading=True)
-        base_robot_heading_point2 = Point(heading=True)
+        base_robot_heading_point1 = Point(is_heading=True)
+        base_robot_heading_point2 = Point(is_heading=True)
 
         robots_eq = get_line_equation(self.robot1.center, self.robot2.center)
         base_robot_heading_eq = get_perpendicular_line_equation(robots_eq, self.base_robot.center)

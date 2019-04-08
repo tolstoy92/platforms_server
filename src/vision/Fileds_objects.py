@@ -161,10 +161,11 @@ class Robot(Marker):
                 if self.on_point(self.actual_point):
                     self.update_actual_point()
                 else:
-                    if not self.actual_point.heading:
+                    if not self.actual_point.is_heading:
                         if abs(self.angle_to_actual_point) < ANGLE_EPS:
                             self.move()
                         else:
+                            self.update_angles()
                             self.rotation()
                     else:
                         self.rotation()
@@ -197,7 +198,7 @@ class Robot(Marker):
 
     def on_point(self, point):
         if point:
-            if not point.heading:
+            if not point.is_heading:
                 distance_to_point = get_distance_between_points(self.center, point)
                 return distance_to_point <= EPS
             else:
