@@ -15,10 +15,13 @@ ANGLE_EPS = 3
 MAP_ROWS = 7
 MAP_COLUMNS = 7
 
-MARKER_SIZE = 0.02
-ROBOT_SIZE = 0.05
-WHEEL_SIZE = 0.065
 
+MARKER_SIZE = 0.02
+ROBOT_SIZE = 0.10
+# ROBOT_H = 0.02
+WHEEL_SIZE = 0.04
+
+CONNECTION_DISTANCE = 0.02
 # cam_parametrs = np.load('/home/ivan/Documents/platforms_ws/src/mobile_platforms_ROS/src/vision/960x720_web_cam.npz')
 # MTX = cam_parametrs['mtx']
 # DIST = cam_parametrs['dist']

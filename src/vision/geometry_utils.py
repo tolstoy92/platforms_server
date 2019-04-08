@@ -73,6 +73,18 @@ def get_line_equation(pt1, pt2):
     k, b = np.linalg.solve(a, b)
     return k, b
 
+def get_perpendicular_line_equation(eq1, pt):
+    k, b = eq1
+    perpendic_k = -1/k
+    perpendic_b = pt.y - perpendic_k*pt.x
+    return perpendic_k, perpendic_b
+
+def get_crossing_lines_point(eq1, eq2):
+    k1, b1 = eq1
+    k2, b2 = eq2
+    x = (b2 - b1) / (k1 - k2)
+    y = k1*x + b1
+    return Point(x, y)
 
 class Point:
     def __init__(self, x=None, y=None):
@@ -114,3 +126,32 @@ class Point:
         img_x = int((self.x + HIGH_BOUNDS) * IMAGE_SIZE / (HIGH_BOUNDS - LOW_BOUNDS))
         img_y = int((self.y + HIGH_BOUNDS) * IMAGE_SIZE / (HIGH_BOUNDS - LOW_BOUNDS))
         return Point(img_x, img_y)
+
+
+class RealWorldPoint():
+    def __init__(self, x=None, y=None, z=None):
+        self.x = x
+        self.y = y
+        self.z = z
+
+    def __str__(self):
+        return str(self.x) + " " + str(self.y) + " " + str(self.z)
+
+    def __repr__(self):
+        return str(self.x) + " " + str(self.y) + " " + str(self.z)
+
+    def __call__(self):
+        return self.x, self.y, self.z
+
+    def update_real_world_position(self, x, y, z):
+        self.x, self.y, self.z = x, y, z
+
+    def get_distance_xy_to(self, point):
+        return sqrt((point.x - self.x) ** 2 + (point.y - self.y) ** 2)
+
+    def get_distance_xy_between_points(self, pt1, pt2):
+        return sqrt((pt1.x - pt2.x) ** 2 + (pt1.y - pt2.y) ** 2)
+
+    def is_empty(self):
+        if self.x and self.y and self.z: return False
+        else: return True
