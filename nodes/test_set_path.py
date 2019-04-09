@@ -2,7 +2,6 @@
 
 
 import cv2
-
 import rospy
 from time import sleep
 from random import randint
@@ -15,7 +14,7 @@ from platforms_server.msg import AllPathes, Path, FieldObjects as FieldObjects_m
 MARKER_IDS = [2, 3, 4]
 
 path_points_num = 3 # to change points number!
-robots_num = 1
+robots_num = 2
 
 
 image = None
@@ -37,6 +36,7 @@ def cv_callback(event,x,y,flags,param):
     if event == cv2.EVENT_LBUTTONUP:
         X, Y = x, y
 
+
 def draw_rectangle(center, width):
     points = []
     points.append((int(center[0] - width // 2), int(center[1] - width // 2)))
@@ -52,15 +52,18 @@ cv2.setMouseCallback('image_to_set_path', cv_callback)
 
 final_msg = AllPathes()
 
+
 def create_msg(id, path):
     path_msg = Path()
     path_msg.platform_id = id
     path_msg.path_points = path
     return path_msg
 
+
 OK = False
 
 was_robot_data = False
+
 
 def obj_callback(msg_data):
     global was_robot_data, robots_num

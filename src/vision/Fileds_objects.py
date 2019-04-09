@@ -1,39 +1,11 @@
 from numpy import array
 from copy import deepcopy
 from matplotlib.path import Path
-from math import degrees, sqrt, acos, tan, radians, cos, sin, atan
-from platforms_server.msg import RobotData, GoalData, ObstacleData, Point2d, Wheel as Wheel_msg
-from vision.vision_constants import IMAGE_SIZE, HIGH_BOUNDS, LOW_BOUNDS, EPS, ANGLE_EPS, MARKER_SIZE, ROBOT_SIZE, WHEEL_SIZE
+from math import degrees, sqrt, tan, radians, cos, sin, atan
+from platforms_server.msg import RobotData, GoalData, ObstacleData  #, Wheel as Wheel_msg
+from constants.robot_constants import *
 from vision.geometry_utils import *
 
-
-class RealWorldPoint():
-    def __init__(self, x=None, y=None, z=None):
-        self.x = x
-        self.y = y
-        self.z = z
-
-    def __str__(self):
-        return str(self.x) + " " + str(self.y) + " " + str(self.z)
-
-    def __repr__(self):
-        return str(self.x) + " " + str(self.y) + " " + str(self.z)
-
-    def __call__(self):
-        return self.x, self.y, self.z
-
-    def update_real_world_position(self, x, y, z):
-        self.x, self.y, self.z = x, y, z
-
-    def get_distance_xy_to(self, point):
-        return sqrt((point.x - self.x) ** 2 + (point.y - self.y) ** 2)
-
-    def get_distance_xy_between_points(self, pt1, pt2):
-        return sqrt((pt1.x - pt2.x) ** 2 + (pt1.y - pt2.y) ** 2)
-
-    def is_empty(self):
-        if self.x and self.y and self.z: return False
-        else: return True
 
 class Marker:
     def __init__(self, id, corners, real_world_position):
@@ -99,6 +71,7 @@ class Robot(Marker):
 
         self.direction = self.get_direction()
         self.path = []
+        self.connection_path = []
 
         self.actual_point = Point()
         self.next_point = Point()
@@ -119,13 +92,12 @@ class Robot(Marker):
         self.self_rotation = False
 
         self.on_finish_point = False
-        self.on_finish_heading = False
 
     def __repr__(self):
         return "Robot:\n\tid: {}\n\tposition: {}\n\treal world position: {}\n\t" \
                "direction: {}\n\tmove forward: {}\n\trotation: {}\n\t" \
                "angle to actual point: {}\n\tangle to next point: {}\n\ton point: {}\n\t" \
-                "on finish: {}\n\ton finish heading: {}".format(self.id,
+                "on finish: {}".format(self.id,
                                                                self.center,
                                                                self.real_world_position,
                                                                self.direction,
@@ -134,8 +106,7 @@ class Robot(Marker):
                                                                self.angle_to_actual_point,
                                                                self.angle_to_next_point,
                                                                self.on_point(self.actual_point),
-                                                               self.on_finish_point,
-                                                               self.on_finish_heading)
+                                                               self.on_finish_point)
 
     def prepare_msg(self):
         msg = RobotData()
@@ -162,7 +133,6 @@ class Robot(Marker):
         msg.rotation = self.self_rotation
         msg.move = self.move_forward
         msg.on_finish_point = self.on_finish_point
-        msg.on_finish_heading = self.on_finish_heading
         if not self.wheels_pair.is_empty():
             msg.wheels_pair = self.wheels_pair
         return msg
@@ -173,38 +143,36 @@ class Robot(Marker):
         self.wheels_pair.get_wheels_centers(self.corners, self.center, self.direction)
         self.wheels_pair.update_wheel_edges(self.corners, self.center)
 
-        if not self.on_finish_point and not self.on_finish_heading:
+        if not self.on_finish_point:
             self.update_corners(corners)
             self.update_position()
             self.update_direction()
             if self.path_created:
+                for pt in self.path:
+                    print(pt)
                 if not self.finish_point:
                     self.finish_point = self.path[-1]
-                if not self.finish_heading_point:
-                    self.create_finish_heading_point(self.final_angle_to_heading_point)
                 if self.actual_point.is_empty():
                     self.update_actual_point()
                 self.update_angles()
                 if self.on_point(self.actual_point):
                     self.update_actual_point()
                 else:
-                    if abs(self.angle_to_actual_point) < ANGLE_EPS:
-                        self.move()
+                    if not self.actual_point.is_heading:
+                        if abs(self.angle_to_actual_point) < ANGLE_EPS:
+                            self.move()
+                        else:
+                            self.update_angles()
+                            self.rotation()
                     else:
-                        self.rotation()
-        elif self.on_finish_point and not self.on_finish_heading:
-            self.update_corners(corners)
-            self.update_position()
-            self.update_direction()
-            self.angle_to_heading_point = get_angle_by_3_points(self.direction, self.finish_heading_point, self.center)
-            if abs(self.angle_to_heading_point) >= 3:
-                self.actual_point = self.finish_heading_point
-                self.update_angles()
-                self.rotation()
-            else:
-                self.on_finish_heading = True
+                        if abs(self.angle_to_actual_point) < ANGLE_EPS:
+                            self.update_actual_point()
+                        else:
+                            self.update_angles()
+                            self.rotation()
         else:
             self.stop()
+
 
     def update_position(self):
         if self.center:
@@ -220,8 +188,14 @@ class Robot(Marker):
 
     def on_point(self, point):
         if point:
-            distance_to_point = get_distance_between_points(self.center, point)
-            return distance_to_point <= EPS
+            if not point.is_heading:
+                distance_to_point = get_distance_between_points(self.center, point)
+                return distance_to_point <= EPS
+            else:
+                if get_angle_by_3_points(self.direction, point, self.center) <= ANGLE_EPS:
+                    return True
+                else:
+                    return False
         else:
             return False
 
@@ -229,12 +203,13 @@ class Robot(Marker):
         if self.path_created:
             try:
                 self.actual_point = self.path.pop(0)
+                print(self.actual_point.is_heading)
                 try:
                     self.next_point = self.path[0]
                 except:
-                    self.next_point = self.next_point.set_xy(None, None)
+                    self.next_point = Point()
             except:
-                self.on_finish_point = True
+                self.on_finish_point = self.on_point(self.actual_point)
 
     def create_finish_heading_point(self, angle_to_point):
         delta = 50
@@ -287,7 +262,7 @@ class Robot(Marker):
         if not self.path_created:
             tmp_path = []
             for pt in path_msg:
-                tmp_path.append(Point(pt.x, pt.y))
+                tmp_path.append(Point(pt.x, pt.y, pt.is_heading))
             self.path = deepcopy(tmp_path)
             self.path_created = True
 
@@ -370,6 +345,7 @@ class Wheels_pair():
         return angle_right, angle_left
 
     def get_dx_dy_of_wheels(self, angle_right, angle_left, wheel_h_in_pix):
+        # dx, dy of wheels centers regarding robot's center
         d_x_right = cos(radians(angle_right)) * wheel_h_in_pix
         d_y_right = sin(radians(angle_right)) * wheel_h_in_pix
 
@@ -437,6 +413,7 @@ class Wheels_pair():
         return k
 
     def compute_wheels_sides(self, robot_center, dx, dy):
+        # wheel's sides are wheel's frontside and backside
         if self.right_wheel.center.x >= self.left_wheel.center.x:
             if self.right_wheel.center.y <= self.left_wheel.center.y:
                 self.right_wheel.front_side_point = Point(robot_center.x + dx, robot_center.y - dy)
@@ -479,6 +456,15 @@ class Wheels_pair():
                 self.right_wheel.back_side_point = Point(robot_center.x - dx, robot_center.y - dy)
                 self.right_wheel.front_side_point = Point(self.right_wheel.center.x - ddx,
                                                           self.right_wheel.center.y - ddy)
+
+class PathPoint(Point):
+    def __init__(self, x=None, y=None):
+        Point.__init__(self, x, y)
+
+class HeadingPoint(Point):
+    def __init__(self, x=None, y=None):
+        Point.__init__(self, x, y)
+
 
 class Obstacle:
     def __init__(self, id, marker_list):
@@ -559,3 +545,4 @@ class Obstacle:
         ompl_points = self.remap_points_to_ompl_coord_system()
         points = self.points_to_list(ompl_points)
         return Path(array(points))
+
