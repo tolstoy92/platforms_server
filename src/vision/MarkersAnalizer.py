@@ -1,8 +1,8 @@
 import rospy
 from math import sqrt
-from vision.vision_constants import EPS
+from constants.robot_constants import EPS
 from vision.Fileds_objects import Robot, Goal, Marker, RealWorldPoint
-from platforms_server.msg import FieldObjects as FieldObjects_msg, ArucoData, AllPathes
+from platforms_server.msg import FieldObjects as FieldObjects_msg
 
 
 class MarkersAnalizer:

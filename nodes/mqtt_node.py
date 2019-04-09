@@ -3,9 +3,9 @@
 
 import rospy
 import paho.mqtt.client as mqtt
-from mqtt_utils.mqtt_constants import *
+from constants.mqtt_constants import *
 from mqtt_utils.mqtt_utils import MqttClientTools
-from platforms_server.msg import ArucoData, MarkerData, Point2d, FieldObjects
+from platforms_server.msg import FieldObjects
 
 client = mqtt.Client("Server")
 msg_sender = MqttClientTools(SERVER_IP, PORT, MESSAGES_QOS, CONNECTON_TOPIC, DELAY_TIME)

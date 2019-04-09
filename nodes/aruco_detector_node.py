@@ -1,16 +1,14 @@
 #!/usr/bin/env python
 
 
-import os
 import cv2
-import math
 import rospy
-import numpy as np
 from cv2 import aruco
 from sensor_msgs.msg import Image
 from geometry_msgs.msg import Point
 from cv_bridge import CvBridge, CvBridgeError
-from vision.vision_constants import MARKER_SIZE, cam_parametrs
+from constants.vision_constants import cam_parametrs
+from constants.robot_constants import MARKER_SIZE
 from platforms_server.msg import ArucoData, MarkerData, Point2d
 
 

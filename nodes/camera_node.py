@@ -4,8 +4,8 @@
 import cv2
 import rospy
 from sensor_msgs.msg import Image
-from cv_bridge import CvBridge, CvBridgeError
-from vision.vision_constants import IMAGE_SIZE, CAMERA_INDEX, CV_WAITKEY
+from cv_bridge import CvBridge
+from constants.vision_constants import IMAGE_SIZE, CAMERA_INDEX, CV_WAITKEY
 
 def resize_image_to_square_size(image):
     w, h, _ = image.shape

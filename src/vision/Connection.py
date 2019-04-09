@@ -1,6 +1,6 @@
 from vision.geometry_utils import *
-from vision.vision_constants import MARKER_SIZE, CONNECTION_DISTANCE, ROBOT_H, ROBOT_SIZE
-from math import degrees, sqrt, acos, tan, radians, cos, sin, atan, asin
+from constants.robot_constants import MARKER_SIZE, CONNECTION_DISTANCE, ROBOT_H, ROBOT_SIZE
+from math import sqrt
 from sympy import symbols, solve
 
 class ParallelConnection():

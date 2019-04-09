@@ -1,8 +1,5 @@
 from math import sqrt, acos, degrees
-import numpy as np
-# from vision.Fileds_objects import Point
-from vision.vision_constants import IMAGE_SIZE, HIGH_BOUNDS, LOW_BOUNDS, EPS, ANGLE_EPS, MARKER_SIZE, ROBOT_SIZE, WHEEL_SIZE
-
+from constants.vision_constants import *
 
 
 def get_line_cntr(pt1, pt2):

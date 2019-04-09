@@ -4,8 +4,6 @@ import rospy
 from sensor_msgs.msg import Image
 from cv_bridge import CvBridge, CvBridgeError
 from platforms_server.msg import FieldObjects as FieldObjects_msg, AllPathes
-from vision.vision_constants import IMAGE_SIZE, MAP_ROWS, MAP_COLUMNS
-from vision.geometry_utils import Point
 
 
 class Visualizer():

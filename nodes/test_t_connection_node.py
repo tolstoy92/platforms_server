@@ -1,19 +1,11 @@
 #!/usr/bin/env python
 
-import cv2
-
 import rospy
 from vision.Connection import TConnection
 
-from time import sleep
-from random import randint
-from sensor_msgs.msg import Image
-from vision.geometry_utils import Point
-from cv_bridge import CvBridge, CvBridgeError
 from platforms_server.msg import AllPathes, Path, FieldObjects as FieldObjects_msg
 
 
-# MARKER_IDS = [2, 3, 4]
 robots_num = 2
 
 def create_msg(id, path):

@@ -9,7 +9,8 @@ d = generate_distutils_setup(
               'vision',
               'visualize_utils',
               'mqtt_utils',
-              'vrep_communicator'],
+              'vrep_communicator',
+              'constants'],
     package_dir={'': 'src'},
 )
 

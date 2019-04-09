@@ -1,9 +1,9 @@
 from numpy import array
 from copy import deepcopy
 from matplotlib.path import Path
-from math import degrees, sqrt, acos, tan, radians, cos, sin, atan, asin
-from platforms_server.msg import RobotData, GoalData, ObstacleData, Point2d, Wheel as Wheel_msg
-from vision.vision_constants import IMAGE_SIZE, HIGH_BOUNDS, LOW_BOUNDS, EPS, ANGLE_EPS, MARKER_SIZE, ROBOT_SIZE, WHEEL_SIZE
+from math import degrees, sqrt, tan, radians, cos, sin, atan
+from platforms_server.msg import RobotData, GoalData, ObstacleData  #, Wheel as Wheel_msg
+from constants.robot_constants import *
 from vision.geometry_utils import *
 
 
