@@ -159,11 +159,18 @@ class Robot(Marker):
                     self.update_actual_point()
                 else:
                     if not self.actual_point.is_heading:
-                        if abs(self.angle_to_actual_point) < ANGLE_EPS:
-                            self.move()
+                        if abs(self.angle_to_actual_point) <= 90:
+                            if abs(self.angle_to_actual_point) < ANGLE_EPS:
+                                self.move()
+                            else:
+                                self.update_angles()
+                                self.rotation()
                         else:
-                            self.update_angles()
-                            self.rotation()
+                            if abs(180 - self.angle_to_actual_point) < ANGLE_EPS:
+                                self.move()
+                            else:
+                                self.update_angles()
+                                self.rotation()
                     else:
                         if abs(self.angle_to_actual_point) < ANGLE_EPS:
                             self.update_actual_point()

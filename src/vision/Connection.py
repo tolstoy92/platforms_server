@@ -54,6 +54,8 @@ class ParallelConnection():
         x2, y2 = pt.x, pt.y
         return Point(int((x1 + x2)/2), int((y1+y2)/2))
 
+    # def create_connection_path
+
     def check(self, pt1, pt2):
         dist = get_distance_between_points(pt1, pt2)
         dist = dist * get_meters_in_pix(MARKER_SIZE, self.robot1.corners)
@@ -68,6 +70,8 @@ class TConnection(ParallelConnection):
                                           get_meters_in_pix(MARKER_SIZE, self.robot1.corners)
 
     def chose_base_robot(self):
+        # base robot is < | > robot in T connection
+        # riding robot is < - > robot in T connection
         connection_angle = 90
         robot1_angle = get_angle_by_3_points(self.robot1.direction, self.robot2.center, self.robot1.center)
         robot2_angle = get_angle_by_3_points(self.robot2.direction, self.robot1.center, self.robot2.center)
@@ -108,32 +112,38 @@ class TConnection(ParallelConnection):
         return connection_line_eq
 
     def get_riding_robot_connection_point(self):
-            connection_line_eq = self.get_connection_line_eq()
-            k, b = connection_line_eq
-            X = symbols('x')
-            d = self.connection_distanse_in_pix
-            x, y = self.base_robot.center.x, self.base_robot.center.y
-            eq = (X - x)**2 + ((k*X + b) - y)**2 - d**2
+        connection_line_eq = self.get_connection_line_eq()
+        k, b = connection_line_eq
+        X = symbols('x')
+        d = self.connection_distanse_in_pix
+        x, y = self.base_robot.center.x, self.base_robot.center.y
+        eq = (X - x)**2 + ((k*X + b) - y)**2 - d**2
 
-            pts_lst = solve([eq], X)
+        pts_lst = solve([eq], X)
 
-            pt1_x, pt2_x = pts_lst
+        pt1_x, pt2_x = pts_lst
 
-            pt1_x, pt2_x = pt1_x[0], pt2_x[0]
-            print(pt1_x, pt2_x, k, b)
+        pt1_x, pt2_x = pt1_x[0], pt2_x[0]
 
-            pt1_y = k * pt1_x + b
-            pt2_y = k * pt2_x + b
+        pt1_y = k * pt1_x + b
+        pt2_y = k * pt2_x + b
 
-            pt1 = Point(pt1_x, pt1_y)
-            pt2 = Point(pt2_x, pt2_y)
+        pt1 = Point(pt1_x, pt1_y)
+        pt2 = Point(pt2_x, pt2_y)
 
-            if get_distance_between_points(self.riding_robot.center, pt1) <= get_distance_between_points(self.riding_robot.center, pt2):
-                riding_robot_connection_point = pt1
-            else:
-                riding_robot_connection_point = pt2
+        if get_distance_between_points(self.riding_robot.center, pt1) <= get_distance_between_points(self.riding_robot.center, pt2):
+            riding_robot_connection_point = pt1
+        else:
+            riding_robot_connection_point = pt2
 
-            return riding_robot_connection_point
+        return riding_robot_connection_point
+
+    def create_riding_robot_connection_path(self, conn_point):
+        middle_point = Point(int((self.riding_robot.center.x + conn_point.x)/2), int((self.riding_robot.center.y + conn_point.y)/2))
+        add_pt1 = Point(int((self.riding_robot.center.x + middle_point.x)/2), int((self.riding_robot.center.y + middle_point.y)/2))
+        add_pt2 = middle_point
+        add_pt3 = Point(int((middle_point.x + conn_point.x)/2), int((middle_point.y + conn_point.y)/2))
+        return [add_pt1, add_pt2, add_pt3, conn_point]
 
     def check(self, pt1, pt2):
         dist = get_distance_between_points(pt1, pt2)
