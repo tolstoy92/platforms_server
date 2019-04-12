@@ -2,7 +2,7 @@
 
 import rospy
 from vision.MarkersAnalizer import MarkersAnalizer
-from platforms_server.msg import ArucoData, FieldObjects, AllPathes
+from platforms_server.msg import ArucoData, AllPathes
 
 
 analizer = MarkersAnalizer()

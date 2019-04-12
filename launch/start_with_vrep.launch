@@ -1,4 +1,9 @@
 <launch>
+    <rosparam command = "load" file = "$(find platforms_server)/config/vision_config.yaml" />
+    <rosparam command = "load" file = "$(find platforms_server)/config/robot_config.yaml" />
+    <rosparam command = "load" file = "$(find platforms_server)/config/mqtt_config.yaml" />
+    <rosparam command = "load" file = "$(find platforms_server)/config/path_planner_config.yaml" />
+
     <node pkg="platforms_server" name="vrep_communicator_node" type="vrep_communicator_node.py" output="screen"/>
     <node pkg="platforms_server" name="path_planner_node" type="path_planner_node.py" output="screen"/>
 </launch>

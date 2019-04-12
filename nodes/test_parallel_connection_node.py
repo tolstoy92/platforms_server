@@ -12,9 +12,8 @@ from vision.geometry_utils import Point
 from cv_bridge import CvBridge, CvBridgeError
 from platforms_server.msg import AllPathes, Path, FieldObjects as FieldObjects_msg
 
-
-# MARKER_IDS = [2, 3, 4]
 robots_num = 2
+
 
 def create_msg(id, path):
     path_msg = Path()
@@ -22,11 +21,11 @@ def create_msg(id, path):
     path_msg.path_points = path
     return path_msg
 
+
 OK = False
-
 was_robot_data = False
-
 PATH_CREATED = False
+
 
 def obj_callback(msg_data):
     global was_robot_data, robots_num, PATH_CREATED
@@ -47,8 +46,8 @@ def obj_callback(msg_data):
                 paths_data_publisher.publish(final_msg)
                 PATH_CREATED = True
 
+
 rospy.init_node("test_parallel_connection_node")
-# img_sub = rospy.Subscriber("square_image", Image, img_callback)
 objects_sub = rospy.Subscriber("field_objects", FieldObjects_msg, obj_callback)
 paths_data_publisher = rospy.Publisher("paths_data", AllPathes, queue_size=1)
 

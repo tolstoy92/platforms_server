@@ -1,9 +1,10 @@
 import rospy
 from math import sqrt
-from constants.robot_constants import EPS
+# from constants.robot_constants import EPS
 from vision.Fileds_objects import Robot, Goal, Marker, RealWorldPoint
 from platforms_server.msg import FieldObjects as FieldObjects_msg
 
+EPS = rospy.get_param('EPS')
 
 class MarkersAnalizer:
     def __init__(self):
@@ -85,4 +86,3 @@ class MarkersAnalizer:
 
     def get_distance_between_pts(self, pt1, pt2):
         return sqrt((pt2.x - pt1.x) ** 2 + (pt2.y - pt1.y) ** 2)
-

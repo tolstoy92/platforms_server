@@ -1,0 +1,13 @@
+SERVER_IP:          192.168.0.61
+PORT:               1883
+FEEDBACK_TOPIC:     esp32/feedback/+
+CONNECTON_TOPIC:    Connected
+MAIN_TOPIC:         platforms/
+
+NUMBER_OF_CLIENTS:  1
+
+MAX_WORKERS:        10
+WORKER_TIME:        0.3
+MESSAGES_QOS:       2
+
+DELAY_TIME:         0.2

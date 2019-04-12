@@ -1,7 +1,15 @@
+import rospy
 from vision.geometry_utils import *
-from constants.robot_constants import MARKER_SIZE, CONNECTION_DISTANCE, ROBOT_H, ROBOT_SIZE
+# from constants.robot_constants import MARKER_SIZE, CONNECTION_DISTANCE, ROBOT_H, ROBOT_SIZE
 from math import sqrt
 from sympy import symbols, solve
+from numpy import mean
+
+MARKER_SIZE = rospy.get_param('MARKER_SIZE')
+CONNECTION_DISTANCE  = rospy.get_param('CONNECTION_DISTANCE')
+ROBOT_H  = rospy.get_param('ROBOT_H')
+ROBOT_SIZE = rospy.get_param('ROBOT_SIZE')
+
 
 class ParallelConnection():
     def __init__(self, robot1, robot2):
@@ -149,3 +157,89 @@ class TConnection(ParallelConnection):
         dist = get_distance_between_points(pt1, pt2)
         dist = dist * get_meters_in_pix(MARKER_SIZE, self.robot1.corners)
         print('distance: {}'.format(dist))
+
+
+class FineTuneConnection():
+    def __init__(self, connection):
+        if isinstance(connection, ParallelConnection):
+            self.connection_type = 'P'
+            self.base_robot = connection.robot1
+            self.riding_robot = connection.robot2
+        elif isinstance(connection, TConnection):
+            self.connection_type = 'T'
+            self.base_robot = connection.base_robot
+            self.riding_robot = connection.riding_robot
+        self.connection = connection
+        self.k_eps = 0.05
+
+
+
+        self.ir_signals_list = []
+        self.len_ir_list = 10
+        self.max_signal = None
+        self.signal_eps = 30
+
+    def is_align_needed(self):
+        if self.connection_type == 'T':
+            if abs(get_line_equation(self.base_robot.center, self.base_robot.direction)[0] - \
+                   get_line_equation(self.riding_robot.center, self.riding_robot.wheels_pair.left_wheel.center)[0]) >= self.k_eps:
+                return True
+            else:
+                return False
+        elif  self.connection_type == 'P':
+            if abs(get_line_equation(self.base_robot.center, self.base_robot.wheels_pair.right_wheel.center)[0] - \
+                   get_line_equation(self.riding_robot.center, self.riding_robot.wheels_pair.left_wheel.center)[0]) >= self.k_eps:
+                return True
+            else:
+                return False
+
+    def riding_wheel(self):
+        if get_distance_between_points(self.base_robot.center, self.riding_robot.wheels_pair.left_wheel.center) <= get_distance_between_points(self.base_robot.center, self.riding_robot.wheels_pair.right_wheel.center):
+            riding_wheel = 'r'
+        else:
+            riding_wheel = 'l'
+        return riding_wheel
+
+    def ride_side(self):
+        pass
+
+    def get_base_point_for_find_angel(self):
+        if self.connection_type == 'T':
+            if get_distance_between_points(self.base_robot.wheels_pair.left_wheel.center, self.riding_robot.center) < get_distance_between_points(self.base_robot.wheels_pair.right_wheel.center, self.riding_robot.center):
+                return self.base_robot.wheels_pair.left_wheel.center
+            else:
+                return self.base_robot.wheels_pair.right_wheel.center
+        elif self.connection_type == 'P':
+            dir_point = self.base_robot.direction
+            undir_point = get_line_center(self.base_robot.corners[2], self.base_robot.corners[3])
+            if get_distance_between_points(self.riding_robot.direction, dir_point) < \
+                get_distance_between_points(self.riding_robot.direction, undir_point):
+                return dir_point
+            else:
+                return undir_point
+
+
+
+    # def align_riding_robot(self):
+    #     print(get_line_equation(self.base_robot)
+
+    # def append_ir_list(self, ir_value):
+    #     if len(self.ir_signals_list) >= self.len_ir_list:
+    #         self.ir_signals_list = self.ir_signals_list[1:self.len_ir_list]
+    #     self.ir_signals_list.append(ir_value)
+    #     if len(self.ir_signals_list):
+    #         self.max_signal = max(self.ir_signals_list)
+    #
+    # def is_ride_direction_right(self):
+    #     current_signal = self.ir_signals_list[-1]
+    #     if len(self.ir_signals_list) > 5:
+    #         if current_signal >= mean(self.ir_signals_list[2:-1]):
+    #             return True
+    #         else:
+    #             return False
+    #     else:
+    #         return True
+    #
+    # def ch(self, val):
+    #     self.append_ir_list(val)
+    #     print(self.is_ride_direction_right(), val)

@@ -1,11 +1,12 @@
 #!/usr/bin/env python
 
 import rospy
-from vrep_communicator.VrepCommunicator import Robot, Vrep
+from vrep_communicator.VrepCommunicator import Robot
 import vrep_communicator.vrep_constants as const
 from platforms_server.msg import RobotMovement
 from vision.Fileds_objects import Point
 from math import fabs
+
 
 def callback(msg_data):
     robot = Robot(msg_data.id)

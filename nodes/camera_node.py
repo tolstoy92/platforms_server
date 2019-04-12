@@ -5,7 +5,11 @@ import cv2
 import rospy
 from sensor_msgs.msg import Image
 from cv_bridge import CvBridge
-from constants.vision_constants import IMAGE_SIZE, CAMERA_INDEX, CV_WAITKEY
+
+IMAGE_SIZE = rospy.get_param('IMAGE_SIZE')
+CAMERA_INDEX = rospy.get_param('CAMERA_INDEX')
+CV_WAITKEY = rospy.get_param('CV_WAITKEY')
+
 
 def resize_image_to_square_size(image):
     w, h, _ = image.shape
@@ -19,7 +23,6 @@ def resize_image_to_square_size(image):
 
 rospy.init_node('camera_node', anonymous=True)
 
-
 cv_bridge = CvBridge()
 image_publisher = rospy.Publisher("square_image", Image, queue_size=1)
 
@@ -29,7 +32,6 @@ stream = cv2.VideoCapture(CAMERA_INDEX)
 stream.set(cv2.CAP_PROP_FRAME_WIDTH, 1280)
 stream.set(cv2.CAP_PROP_FRAME_HEIGHT, 960)
 stream.set(cv2.CAP_PROP_FPS, 30)
-
 
 while RUN and not rospy.is_shutdown():
     ret, img = stream.read()
@@ -46,5 +48,3 @@ while RUN and not rospy.is_shutdown():
     else:
         print("Incorrect camera index << {} >>!".format(CAMERA_INDEX))
         RUN = not RUN
-
-

@@ -3,25 +3,26 @@
 
 import cv2
 import rospy
-from time import sleep
-from random import randint
 from sensor_msgs.msg import Image
 from vision.geometry_utils import Point
-from cv_bridge import CvBridge, CvBridgeError
+from cv_bridge import CvBridge
 from platforms_server.msg import AllPathes, Path, FieldObjects as FieldObjects_msg
 
 
 MARKER_IDS = [2, 3, 4]
-
-path_points_num = 3 # to change points number!
+path_points_num = 5  # to change points number!
 robots_num = 1
 
-
 image = None
-X, Y = None, None
-sector_x , sector_y = None, None
-
 bridge = CvBridge()
+
+cv2.namedWindow('image_to_set_path')
+
+final_msg = AllPathes()
+OK = False
+
+was_robot_data = False
+X, Y = None, None
 
 
 def img_callback(msg_data):
@@ -29,7 +30,7 @@ def img_callback(msg_data):
     image = bridge.imgmsg_to_cv2(msg_data, "bgr8")
 
 
-def cv_callback(event,x,y,flags,param):
+def cv_callback(event, x, y, flags, param):
     global X, Y
     global sector_x, sector_y
 
@@ -47,22 +48,11 @@ def draw_rectangle(center, width):
         cv2.line(image, points[i], points[i-1], (255, 200, 40), 2)
 
 
-cv2.namedWindow('image_to_set_path')
-cv2.setMouseCallback('image_to_set_path', cv_callback)
-
-final_msg = AllPathes()
-
-
 def create_msg(id, path):
     path_msg = Path()
     path_msg.platform_id = id
     path_msg.path_points = path
     return path_msg
-
-
-OK = False
-
-was_robot_data = False
 
 
 def obj_callback(msg_data):
@@ -77,9 +67,11 @@ def obj_callback(msg_data):
                     OK = False
                     path = []
                     while not OK:
-                        cv2.putText(image, "Select sector. (You need {} points)".format(path_points_num), \
-                                    (20, 20), cv2.FONT_HERSHEY_PLAIN, 2, (255, 50, 40), 2)
-                        cv2.circle(image, (int(robot.center.x), int(robot.center.y)), 5, (255, 255, 10), 4)
+                        cv2.putText(image, "Select sector. (You need {} points)".format(
+                                    path_points_num), (20, 20), cv2.FONT_HERSHEY_PLAIN, 2,
+                                    (255, 50, 40), 2)
+                        cv2.circle(image, (int(robot.center.x), int(robot.center.y)), 5,
+                                   (255, 255, 10), 4)
                         if len(path):
                             for pt in path:
                                 cv2.circle(image, (int(pt.x), int(pt.y)), 5, (255, 100, 50), 4)
@@ -101,10 +93,11 @@ def obj_callback(msg_data):
             was_robot_data = True
 
 
+cv2.setMouseCallback('image_to_set_path', cv_callback)
+
 rospy.init_node("test_set_path")
 img_sub = rospy.Subscriber("square_image", Image, img_callback)
 objects_sub = rospy.Subscriber("field_objects", FieldObjects_msg, obj_callback)
 paths_data_publisher = rospy.Publisher("paths_data", AllPathes, queue_size=1)
-
 
 rospy.spin()

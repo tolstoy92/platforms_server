@@ -1,6 +1,17 @@
+import rospy
+import numpy as np
 from math import sqrt, acos, degrees
-from constants.vision_constants import *
+# from constants.vision_constants import *
 
+CAMERA_INDEX = rospy.get_param('CAMERA_INDEX')
+IMAGE_SIZE = rospy.get_param('IMAGE_SIZE')
+CV_WAITKEY = rospy.get_param('CV_WAITKEY')
+
+LOW_BOUNDS = rospy.get_param('LOW_BOUNDS')    # bound fot ompl remapping
+HIGH_BOUNDS = rospy.get_param('HIGH_BOUNDS')    # bound fot ompl remapping
+
+mtx = np.array(rospy.get_param('mtx'))
+dist = np.array(rospy.get_param('dist'))
 
 def get_line_cntr(pt1, pt2):
     line_cntr = list(map(lambda x: x, ((pt1.x + pt2.x) / 2, (pt1.y + pt2.y) / 2)))

@@ -16,6 +16,7 @@ def prepare_robot_msg(robots):
         goal_msgs.append(msg)
     return goal_msgs
 
+
 def prepare_goal_msg(goals):
     robot_msgs = []
     for id in goals:
@@ -26,6 +27,7 @@ def prepare_goal_msg(goals):
         robot_msgs.append(msg)
     return robot_msgs
 
+
 def prepare_obstacle_msg(obstacles):
     obstacle_msgs = []
     for id in obstacles:
@@ -35,6 +37,7 @@ def prepare_obstacle_msg(obstacles):
         msg.corners = obstacles[id][1]
         obstacle_msgs.append(msg)
     return obstacle_msgs
+
 
 def prepare_point_msg(robot, goal, velocity):
     point_data_msg = RobotMovement()

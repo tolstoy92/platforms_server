@@ -128,4 +128,3 @@ class Visualizer():
 
     def start_spin(self):
         rospy.spin()
-

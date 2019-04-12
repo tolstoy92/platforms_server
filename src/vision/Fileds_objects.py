@@ -1,10 +1,19 @@
+import rospy
 from numpy import array
 from copy import deepcopy
 from matplotlib.path import Path
 from math import degrees, sqrt, tan, radians, cos, sin, atan
-from platforms_server.msg import RobotData, GoalData, ObstacleData  #, Wheel as Wheel_msg
-from constants.robot_constants import *
+from platforms_server.msg import RobotData, GoalData, ObstacleData
 from vision.geometry_utils import *
+
+
+MARKER_SIZE = rospy.get_param('MARKER_SIZE')
+ROBOT_SIZE = rospy.get_param('ROBOT_SIZE')
+ROBOT_H = rospy.get_param('ROBOT_H')
+WHEEL_SIZE = rospy.get_param('WHEEL_SIZE')
+CONNECTION_DISTANCE = rospy.get_param('CONNECTION_DISTANCE')
+EPS = rospy.get_param('EPS')
+ANGLE_EPS = rospy.get_param('ANGLE_EPS')
 
 
 class Marker:
@@ -42,6 +51,7 @@ class Marker:
             self.real_world_position = RealWorldPoint(x, y, z)
         else:
             self.real_world_position.update_real_world_position(x, y, z)
+
 
 class Goal(Marker):
     def __init__(self, id, corners, real_world_position):
@@ -97,16 +107,10 @@ class Robot(Marker):
         return "Robot:\n\tid: {}\n\tposition: {}\n\treal world position: {}\n\t" \
                "direction: {}\n\tmove forward: {}\n\trotation: {}\n\t" \
                "angle to actual point: {}\n\tangle to next point: {}\n\ton point: {}\n\t" \
-                "on finish: {}".format(self.id,
-                                                               self.center,
-                                                               self.real_world_position,
-                                                               self.direction,
-                                                               self.move_forward,
-                                                               self.self_rotation,
-                                                               self.angle_to_actual_point,
-                                                               self.angle_to_next_point,
-                                                               self.on_point(self.actual_point),
-                                                               self.on_finish_point)
+                "on finish: {}".format(self.id, self.center, self.real_world_position,
+                                       self.direction, self.move_forward, self.self_rotation,
+                                       self.angle_to_actual_point, self.angle_to_next_point,
+                                       self.on_point(self.actual_point), self.on_finish_point)
 
     def prepare_msg(self):
         msg = RobotData()
@@ -180,7 +184,6 @@ class Robot(Marker):
         else:
             self.stop()
 
-
     def update_position(self):
         if self.center:
             if get_distance_between_points(self.center, self.get_center()) > 5:
@@ -208,14 +211,13 @@ class Robot(Marker):
 
     def update_actual_point(self):
         if self.path_created:
-            try:
+            if len(self.path):
                 self.actual_point = self.path.pop(0)
-                print(self.actual_point.is_heading)
-                try:
+                if len(self.path):
                     self.next_point = self.path[0]
-                except:
+                else:
                     self.next_point = Point()
-            except:
+            else:
                 self.on_finish_point = self.on_point(self.actual_point)
 
     def create_finish_heading_point(self, angle_to_point):
@@ -552,4 +554,3 @@ class Obstacle:
         ompl_points = self.remap_points_to_ompl_coord_system()
         points = self.points_to_list(ompl_points)
         return Path(array(points))
-
