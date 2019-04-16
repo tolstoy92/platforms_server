@@ -6,11 +6,12 @@ from path_planner.Planner import Paths_planner
 
 
 def callback(msg_data):
-    planner.set_source(msg_data.source)
     planner.set_robots(msg_data.robots)
     planner.set_targets(msg_data.goals)
     planner.set_obstacles(msg_data.obstacles)
+    print(msg_data.obstacles)
     paths = []
+
     if planner.source == "markers_analizer":
         paths = planner.aruco_target_assignment()
     elif planner.source == "vrep":

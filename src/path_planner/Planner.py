@@ -1,10 +1,11 @@
 from time import time
+from math import *
 from ompl import base as ob
 from ompl import geometric as og
 from ompl.util import OMPL_ERROR
 from path_planner import planner_constants as const
 from functools import partial
-from vision.Fileds_objects import Point
+from vision.geometry_utils import Point, get_angle_by_3_points
 import numpy as np
 from matplotlib.path import Path
 from random import choice
@@ -15,7 +16,7 @@ class Paths_planner():
         self.robots = {}
         self.targets = {}
         self.obstacles = {}
-        self.source = None
+        self.source = 'markers_analizer'
 
     def multiple_paths_planning(self):
         # print('Program started')
@@ -68,9 +69,36 @@ class Paths_planner():
         full_obstacles = obstalces + robots_obstacles + targets_obstacles
         return full_obstacles
 
+    def increase_corners(self, marker, size):
+        cntr = marker.center
+        corners = marker.corners
+        pts = []
+        for corner in corners:
+            if corner.y <= cntr.y:
+                if corner.x <= cntr.x:
+                    cos_a = cos(radians(get_angle_by_3_points(corner, cntr, Point(cntr.x-10, cntr.y))))
+                    sin_a = sin(radians(get_angle_by_3_points(corner, cntr, Point(cntr.x-10, cntr.y))))
+                    pts.append(Point(int(corner.x - abs(size*cos_a)), int(corner.y - abs(size*sin_a))))
+                else:
+                    cos_a = cos(radians(get_angle_by_3_points(corner, cntr, Point(cntr.x + 10, cntr.y))))
+                    sin_a = sin(radians(get_angle_by_3_points(corner, cntr, Point(cntr.x + 10, cntr.y))))
+                    pts.append(Point(int(corner.x + abs(size * cos_a)), int(corner.y - abs(size * sin_a))))
+            else:
+                if corner.x <= cntr.x:
+                    cos_a = cos(radians(get_angle_by_3_points(corner, cntr, Point(cntr.x-10, cntr.y))))
+                    sin_a = sin(radians(get_angle_by_3_points(corner, cntr, Point(cntr.x-10, cntr.y))))
+                    pts.append(Point(int(corner.x - abs(size*cos_a)), int(corner.y + abs(size*sin_a))))
+                else:
+                    cos_a = cos(radians(get_angle_by_3_points(corner, cntr, Point(cntr.x + 10, cntr.y))))
+                    sin_a = sin(radians(get_angle_by_3_points(corner, cntr, Point(cntr.x + 10, cntr.y))))
+                    pts.append(Point(int(corner.x + abs(size * cos_a)), int(corner.y + abs(size * sin_a))))
+        return pts
+
     def get_obstacles_from_any_objects(self, objects_dict):
         full_obstacles = []
         for obstacle in objects_dict.values():
+            crnrs = self.increase_corners(obstacle, 75)
+            obstacle.corners = crnrs
             if self.source == "markers_analizer":
                 corners_list = list(Point(xy.x, xy.y).remap_to_ompl_coord_system().get_xy() for xy in obstacle.corners)
             else:
@@ -118,6 +146,7 @@ class Paths_planner():
         targets_dict = dict()
         for goal in goals_list:
             targets_dict[goal.id] = goal
+            # print(targets_dict[goal.id].center)
         self.targets = targets_dict
 
     def set_targets_corners(self, corners):

@@ -119,6 +119,9 @@ class Point:
         self.x = x
         self.y = y
 
+    def get_xy(self):
+        return self.x, self.y
+
     def is_empty(self):
         if self.x and self.y: return False
         else: return True

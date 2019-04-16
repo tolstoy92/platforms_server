@@ -152,8 +152,6 @@ class Robot(Marker):
             self.update_position()
             self.update_direction()
             if self.path_created:
-                for pt in self.path:
-                    print(pt)
                 if not self.finish_point:
                     self.finish_point = self.path[-1]
                 if self.actual_point.is_empty():
@@ -478,6 +476,7 @@ class HeadingPoint(Point):
 class Obstacle:
     def __init__(self, id, marker_list):
         self.id = id
+        print(self.id)
         unsorted_points = self.get_unsorted_obstacles_points(marker_list)
         self.geometric_center = self.compute_geometric_center(marker_list)
         self.obstacle_points = self.sort_obstacles_points(unsorted_points)
@@ -501,8 +500,11 @@ class Obstacle:
         obstacle_border_points = []
         geometric_center = self.compute_geometric_center(markers_list)
         if len(markers_list) > 1:
+            print(111)
             for marker in markers_list:
                 distances_to_geometric_center = {}
+                pts = self.increase_corners(marker, 50)
+                marker.corners = pts
                 for pt in marker.get_corners():
                     distance = get_distance_between_points(geometric_center, pt)
                     while distance in distances_to_geometric_center:
@@ -512,10 +514,39 @@ class Obstacle:
                     obstacle_border_points.append(distances_to_geometric_center.pop(
                                                   max(list(distances_to_geometric_center.keys()))))
         else:
+            print(222)
             if len(markers_list):
-                obstacle_border_points = list(pt for pt in markers_list[0].get_corners())
+                print(markers_list[0].get_corners())
+                print(self.increase_corners(markers_list[0], 50))
+                obstacle_border_points = list(pt for pt in self.increase_corners(markers_list[0], 50))
+                                              # markers_list[0].get_corners())
 
         return obstacle_border_points
+
+    def increase_corners(self, marker, size):
+        cntr = marker.center
+        corners = marker.corners
+        pts = []
+        for corner in corners:
+            if corner.y <= cntr.y:
+                if corner.x <= cntr.x:
+                    cos_a = cos(radians(get_angle_by_3_points(corner, cntr, Point(cntr.x-10, cntr.y))))
+                    sin_a = sin(radians(get_angle_by_3_points(corner, cntr, Point(cntr.x-10, cntr.y))))
+                    pts.append(Point(corner.x - size*cos_a, corner.y - size*sin_a))
+                else:
+                    cos_a = cos(radians(get_angle_by_3_points(corner, cntr, Point(cntr.x + 10, cntr.y))))
+                    sin_a = sin(radians(get_angle_by_3_points(corner, cntr, Point(cntr.x + 10, cntr.y))))
+                    pts.append(Point(corner.x + size * cos_a, corner.y - size * sin_a))
+            else:
+                if corner.x <= cntr.x:
+                    cos_a = cos(radians(get_angle_by_3_points(corner, cntr, Point(cntr.x-10, cntr.y))))
+                    sin_a = sin(radians(get_angle_by_3_points(corner, cntr, Point(cntr.x-10, cntr.y))))
+                    pts.append(Point(corner.x - size*cos_a, corner.y + size*sin_a))
+                else:
+                    cos_a = cos(radians(get_angle_by_3_points(corner, cntr, Point(cntr.x + 10, cntr.y))))
+                    sin_a = sin(radians(get_angle_by_3_points(corner, cntr, Point(cntr.x + 10, cntr.y))))
+                    pts.append(Point(corner.x + size * cos_a, corner.y + size * sin_a))
+        return pts
 
     def compute_geometric_center(self, markers_list):
         all_points = []

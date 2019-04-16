@@ -1,16 +1,18 @@
 from random import randint
 import time
+from platforms_server.msg import IK_Data
+import rospy
 
 
 class MqttClientTools():
-    def __init__(self, server_ip, port, qos, connection_topic, delay_time):
+    def __init__(self, server_ip, port, qos, connection_topic, delay_time, IK_publisher):
         self.last_sending_time = time.time()
         self.qos = qos
         self.server_ip = server_ip
         self.port = port
         self.connection_topic = connection_topic
         self.delay_time = delay_time
-
+        self.IK_publisher = IK_publisher
 
     def wait_for(self, client, msgType, period=0.25):
         if msgType == "SUBACK":
@@ -59,7 +61,6 @@ class MqttClientTools():
         msg = str(msg)
         client.publish(topic, msg, qos=self.qos)
 
-
     def update_last_sendig_time(self):
         self.last_sending_time = time.time()
 
@@ -73,8 +74,8 @@ class MqttClientTools():
     def send_multiple_msg_with_delay(self, client, topics_lst, msgs_lst):
         delay = time.time() - self.last_sending_time
         if delay > self.delay_time:
-            l = list(zip(topics_lst, msgs_lst))
-            for topic, msg in l:
+            msg_lst = list(zip(topics_lst, msgs_lst))
+            for topic, msg in msg_lst:
                 self.send_msg(client, topic, msg)
             self.update_last_sendig_time()
 

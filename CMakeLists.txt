@@ -29,6 +29,7 @@ add_message_files (
   Step.msg
   Wheel.msg
   Wheels_pair.msg
+  IK_Data.msg
 )
 
 
@@ -47,4 +48,3 @@ catkin_package (
 include_directories (
   ${catkin_INCLUDE_DIRS}
 )
-

@@ -4,7 +4,7 @@
 import rospy
 import paho.mqtt.client as mqtt
 from mqtt_utils.mqtt_utils import MqttClientTools
-from platforms_server.msg import FieldObjects
+from platforms_server.msg import FieldObjects, IK_Data
 
 SERVER_IP = rospy.get_param('SERVER_IP')
 PORT = rospy.get_param('PORT')
@@ -15,17 +15,30 @@ DELAY_TIME = rospy.get_param('DELAY_TIME')
 WORKER_TIME = rospy.get_param('WORKER_TIME')
 MAIN_TOPIC = rospy.get_param('MAIN_TOPIC')
 
+
+def mqtt_reciever_callback(client, userdata, message):
+    if message.topic == 'ik_data':
+        mqtt_msg = int(message.payload.decode("utf-8"))
+        msg = IK_Data()
+        msg.ik_data = mqtt_msg
+        ik_data_pub.publish(msg)
+
+
+rospy.init_node("mqtt_node")
+ik_data_pub = rospy.Publisher("ik_data", IK_Data, queue_size=1)
+
 client = mqtt.Client("Server")
-msg_sender = MqttClientTools(SERVER_IP, PORT, MESSAGES_QOS, CONNECTON_TOPIC, DELAY_TIME)
+msg_sender = MqttClientTools(SERVER_IP, PORT, MESSAGES_QOS, CONNECTON_TOPIC, DELAY_TIME,
+                             ik_data_pub)
 
 msg_sender.start_connection_client(client, )
-client.subscribe(FEEDBACK_TOPIC, qos=0)
+client.subscribe('ik_data', qos=0)
+client.on_message = mqtt_reciever_callback
 client.loop(WORKER_TIME)
-
 delays = {}
 
 
-def mqtt_callback(msg_data):
+def mqtt_transmitter_callback(msg_data):
     global delays
     for robot in msg_data.robots:
         if robot.path_created:
@@ -43,6 +56,6 @@ def mqtt_callback(msg_data):
                                                     platform_topic, final_msg)
 
 
-rospy.init_node("mqtt_node")
-fields_data_sub = rospy.Subscriber("field_objects", FieldObjects, mqtt_callback)
+fields_data_sub = rospy.Subscriber("field_objects", FieldObjects, mqtt_transmitter_callback)
+
 rospy.spin()

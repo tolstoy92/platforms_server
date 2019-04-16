@@ -1,22 +1,22 @@
 import rospy
 from vision.geometry_utils import *
-# from constants.robot_constants import MARKER_SIZE, CONNECTION_DISTANCE, ROBOT_H, ROBOT_SIZE
 from math import sqrt
 from sympy import symbols, solve
-from numpy import mean
+from platforms_server.msg import IK_Data
+import time
 
 MARKER_SIZE = rospy.get_param('MARKER_SIZE')
-CONNECTION_DISTANCE  = rospy.get_param('CONNECTION_DISTANCE')
-ROBOT_H  = rospy.get_param('ROBOT_H')
+CONNECTION_DISTANCE = rospy.get_param('CONNECTION_DISTANCE')
+ROBOT_H = rospy.get_param('ROBOT_H')
 ROBOT_SIZE = rospy.get_param('ROBOT_SIZE')
-
+IK_CONNECTION_AREA = rospy.get_param('IK_CONNECTION_AREA')
 
 class ParallelConnection():
     def __init__(self, robot1, robot2):
         self.robot1, self.robot2 = robot1, robot2
         self.connection_distanse_in_meters = CONNECTION_DISTANCE + ROBOT_SIZE
         self.connection_distanse_in_pix = self.connection_distanse_in_meters / \
-                                          get_meters_in_pix(MARKER_SIZE, self.robot1.corners)
+                                           get_meters_in_pix(MARKER_SIZE, self.robot1.corners)
 
     def is_robots_too_close(self):
         half_robots_size_in_pix = (ROBOT_SIZE/2) / get_meters_in_pix(MARKER_SIZE, self.robot1.corners)
@@ -62,8 +62,6 @@ class ParallelConnection():
         x2, y2 = pt.x, pt.y
         return Point(int((x1 + x2)/2), int((y1+y2)/2))
 
-    # def create_connection_path
-
     def check(self, pt1, pt2):
         dist = get_distance_between_points(pt1, pt2)
         dist = dist * get_meters_in_pix(MARKER_SIZE, self.robot1.corners)
@@ -72,17 +70,19 @@ class ParallelConnection():
 
 class TConnection(ParallelConnection):
     def __init__(self, robot1, robot2):
-        self.robot1, self.robot2  = robot1, robot2
+        self.robot1, self.robot2 = robot1, robot2
         self.connection_distanse_in_meters = CONNECTION_DISTANCE + ROBOT_H/2 + ROBOT_SIZE/2
         self.connection_distanse_in_pix = self.connection_distanse_in_meters / \
-                                          get_meters_in_pix(MARKER_SIZE, self.robot1.corners)
+                                           get_meters_in_pix(MARKER_SIZE, self.robot1.corners)
 
     def chose_base_robot(self):
         # base robot is < | > robot in T connection
         # riding robot is < - > robot in T connection
         connection_angle = 90
-        robot1_angle = get_angle_by_3_points(self.robot1.direction, self.robot2.center, self.robot1.center)
-        robot2_angle = get_angle_by_3_points(self.robot2.direction, self.robot1.center, self.robot2.center)
+        robot1_angle = get_angle_by_3_points(self.robot1.direction, self.robot2.center,
+                                             self.robot1.center)
+        robot2_angle = get_angle_by_3_points(self.robot2.direction, self.robot1.center,
+                                             self.robot2.center)
         if abs(robot1_angle - connection_angle) <= abs(robot2_angle - connection_angle):
             self.base_robot, self.riding_robot = self.robot1, self.robot2
         else:
@@ -104,7 +104,8 @@ class TConnection(ParallelConnection):
         base_robot_heading_point2.x = self.base_robot.center.x - 100
         base_robot_heading_point2.y = base_robot_heading_point2.x * k + b
 
-        heading_point = self.chose_base_robot_heading_point(base_robot_heading_point1, base_robot_heading_point2)
+        heading_point = self.chose_base_robot_heading_point(base_robot_heading_point1,
+                                                            base_robot_heading_point2)
         return heading_point
 
     def chose_base_robot_heading_point(self, pt1, pt2):
@@ -139,7 +140,8 @@ class TConnection(ParallelConnection):
         pt1 = Point(pt1_x, pt1_y)
         pt2 = Point(pt2_x, pt2_y)
 
-        if get_distance_between_points(self.riding_robot.center, pt1) <= get_distance_between_points(self.riding_robot.center, pt2):
+        if get_distance_between_points(self.riding_robot.center, pt1) <= \
+           get_distance_between_points(self.riding_robot.center, pt2):
             riding_robot_connection_point = pt1
         else:
             riding_robot_connection_point = pt2
@@ -147,10 +149,13 @@ class TConnection(ParallelConnection):
         return riding_robot_connection_point
 
     def create_riding_robot_connection_path(self, conn_point):
-        middle_point = Point(int((self.riding_robot.center.x + conn_point.x)/2), int((self.riding_robot.center.y + conn_point.y)/2))
-        add_pt1 = Point(int((self.riding_robot.center.x + middle_point.x)/2), int((self.riding_robot.center.y + middle_point.y)/2))
+        middle_point = Point(int((self.riding_robot.center.x + conn_point.x)/2),
+                             int((self.riding_robot.center.y + conn_point.y)/2))
+        add_pt1 = Point(int((self.riding_robot.center.x + middle_point.x)/2),
+                        int((self.riding_robot.center.y + middle_point.y)/2))
         add_pt2 = middle_point
-        add_pt3 = Point(int((middle_point.x + conn_point.x)/2), int((middle_point.y + conn_point.y)/2))
+        add_pt3 = Point(int((middle_point.x + conn_point.x)/2),
+                        int((middle_point.y + conn_point.y)/2))
         return [add_pt1, add_pt2, add_pt3, conn_point]
 
     def check(self, pt1, pt2):
@@ -159,87 +164,35 @@ class TConnection(ParallelConnection):
         print('distance: {}'.format(dist))
 
 
-class FineTuneConnection():
-    def __init__(self, connection):
-        if isinstance(connection, ParallelConnection):
-            self.connection_type = 'P'
-            self.base_robot = connection.robot1
-            self.riding_robot = connection.robot2
-        elif isinstance(connection, TConnection):
-            self.connection_type = 'T'
-            self.base_robot = connection.base_robot
-            self.riding_robot = connection.riding_robot
-        self.connection = connection
-        self.k_eps = 0.05
+class IkSensor():
+    def __init__(self):
+        self.__ik_data = None
+        self.__last_time_data_received = None
+        self.min_connection_ik_data = min(IK_CONNECTION_AREA)
+        self.max_connection_ik_data = max(IK_CONNECTION_AREA)
 
+    def update_ik_data(self, ik_data=None):
+        self.__ik_data = ik_data
+        self.__last_time_data_received = time.clock()
 
-
-        self.ir_signals_list = []
-        self.len_ir_list = 10
-        self.max_signal = None
-        self.signal_eps = 30
-
-    def is_align_needed(self):
-        if self.connection_type == 'T':
-            if abs(get_line_equation(self.base_robot.center, self.base_robot.direction)[0] - \
-                   get_line_equation(self.riding_robot.center, self.riding_robot.wheels_pair.left_wheel.center)[0]) >= self.k_eps:
-                return True
-            else:
+    def is_ik_data_empty_too_long(self):
+        max_deleay = 0.5
+        if self.__last_time_data_received is not None:
+            if abs(time.clock() - self.__last_time_data_received) < max_deleay:
                 return False
-        elif  self.connection_type == 'P':
-            if abs(get_line_equation(self.base_robot.center, self.base_robot.wheels_pair.right_wheel.center)[0] - \
-                   get_line_equation(self.riding_robot.center, self.riding_robot.wheels_pair.left_wheel.center)[0]) >= self.k_eps:
+            else:
+                self.__last_time_data_received = None
+        return True
+
+    def is_valid_ik_data(self):
+        if not self.is_ik_data_empty_too_long:
+            if self.__ik_data is not None:
                 return True
-            else:
-                return False
+        return False
 
-    def riding_wheel(self):
-        if get_distance_between_points(self.base_robot.center, self.riding_robot.wheels_pair.left_wheel.center) <= get_distance_between_points(self.base_robot.center, self.riding_robot.wheels_pair.right_wheel.center):
-            riding_wheel = 'r'
-        else:
-            riding_wheel = 'l'
-        return riding_wheel
-
-    def ride_side(self):
-        pass
-
-    def get_base_point_for_find_angel(self):
-        if self.connection_type == 'T':
-            if get_distance_between_points(self.base_robot.wheels_pair.left_wheel.center, self.riding_robot.center) < get_distance_between_points(self.base_robot.wheels_pair.right_wheel.center, self.riding_robot.center):
-                return self.base_robot.wheels_pair.left_wheel.center
-            else:
-                return self.base_robot.wheels_pair.right_wheel.center
-        elif self.connection_type == 'P':
-            dir_point = self.base_robot.direction
-            undir_point = get_line_center(self.base_robot.corners[2], self.base_robot.corners[3])
-            if get_distance_between_points(self.riding_robot.direction, dir_point) < \
-                get_distance_between_points(self.riding_robot.direction, undir_point):
-                return dir_point
-            else:
-                return undir_point
-
-
-
-    # def align_riding_robot(self):
-    #     print(get_line_equation(self.base_robot)
-
-    # def append_ir_list(self, ir_value):
-    #     if len(self.ir_signals_list) >= self.len_ir_list:
-    #         self.ir_signals_list = self.ir_signals_list[1:self.len_ir_list]
-    #     self.ir_signals_list.append(ir_value)
-    #     if len(self.ir_signals_list):
-    #         self.max_signal = max(self.ir_signals_list)
-    #
-    # def is_ride_direction_right(self):
-    #     current_signal = self.ir_signals_list[-1]
-    #     if len(self.ir_signals_list) > 5:
-    #         if current_signal >= mean(self.ir_signals_list[2:-1]):
-    #             return True
-    #         else:
-    #             return False
-    #     else:
-    #         return True
-    #
-    # def ch(self, val):
-    #     self.append_ir_list(val)
-    #     print(self.is_ride_direction_right(), val)
+    def is_connection_possible(self):
+        if self.is_valid_ik_data:
+            if self.__ik_data >= self.min_connection_ik_data and \
+             self.__ik_data <= self.max_connection_ik_data:
+                return True
+        return False
