@@ -1,6 +1,5 @@
 #!/usr/bin/env python
 
-
 import rospy
 from platforms_server.msg import IK_Data
 from cv_bridge import CvBridge
