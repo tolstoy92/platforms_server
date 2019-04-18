@@ -34,20 +34,21 @@ def obj_callback(msg_data):
             final_msg = AllPathes()
             if len(msg_data.robots) == robots_num:
                 robot1, robot2 = msg_data.robots[0], msg_data.robots[1]
-                connection_path_creator = ParallelConnection(robot1, robot2)
-                # if not connection_path_creator.is_robots_too_close():
-                pt1 = connection_path_creator.find_point1()
-                pt2 = connection_path_creator.find_point2(pt1)
-                connection_path_creator.check(pt1, pt2)
-                r1_path_msg = create_msg(robot1.id, [pt1])
-                r2_path_msg = create_msg(robot2.id, [pt2])
-                final_msg.paths_list.append(r1_path_msg)
-                final_msg.paths_list.append(r2_path_msg)
-                paths_data_publisher.publish(final_msg)
-                PATH_CREATED = True
+                if robot1.connection_mode and robot2.connection_mode:
+                    connection_path_creator = ParallelConnection(robot1, robot2)
+                    # if not connection_path_creator.is_robots_too_close():
+                    pt1 = connection_path_creator.find_point1()
+                    pt2 = connection_path_creator.find_point2(pt1)
+                    connection_path_creator.check(pt1, pt2)
+                    r1_path_msg = create_msg(robot1.id, [pt1])
+                    r2_path_msg = create_msg(robot2.id, [pt2])
+                    final_msg.paths_list.append(r1_path_msg)
+                    final_msg.paths_list.append(r2_path_msg)
+                    paths_data_publisher.publish(final_msg)
+                    PATH_CREATED = True
 
 
-rospy.init_node("test_parallel_connection_node")
+rospy.init_node("parallel_connection_node")
 objects_sub = rospy.Subscriber("field_objects", FieldObjects_msg, obj_callback)
 paths_data_publisher = rospy.Publisher("paths_data", AllPathes, queue_size=1)
 

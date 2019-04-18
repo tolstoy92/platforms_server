@@ -9,7 +9,7 @@ MARKER_SIZE = rospy.get_param('MARKER_SIZE')
 CONNECTION_DISTANCE = rospy.get_param('CONNECTION_DISTANCE')
 ROBOT_H = rospy.get_param('ROBOT_H')
 ROBOT_SIZE = rospy.get_param('ROBOT_SIZE')
-IK_CONNECTION_AREA = rospy.get_param('IK_CONNECTION_AREA')
+
 
 class ParallelConnection():
     def __init__(self, robot1, robot2):
@@ -164,35 +164,4 @@ class TConnection(ParallelConnection):
         print('distance: {}'.format(dist))
 
 
-class IkSensor():
-    def __init__(self):
-        self.__ik_data = None
-        self.__last_time_data_received = None
-        self.min_connection_ik_data = min(IK_CONNECTION_AREA)
-        self.max_connection_ik_data = max(IK_CONNECTION_AREA)
 
-    def update_ik_data(self, ik_data=None):
-        self.__ik_data = ik_data
-        self.__last_time_data_received = time.clock()
-
-    def is_ik_data_empty_too_long(self):
-        max_deleay = 0.5
-        if self.__last_time_data_received is not None:
-            if abs(time.clock() - self.__last_time_data_received) < max_deleay:
-                return False
-            else:
-                self.__last_time_data_received = None
-        return True
-
-    def is_valid_ik_data(self):
-        if not self.is_ik_data_empty_too_long:
-            if self.__ik_data is not None:
-                return True
-        return False
-
-    def is_connection_possible(self):
-        if self.is_valid_ik_data:
-            if self.__ik_data >= self.min_connection_ik_data and \
-             self.__ik_data <= self.max_connection_ik_data:
-                return True
-        return False

@@ -15,10 +15,13 @@ geometry_msgs/Point     real_world_position
 Wheels_pair             wheels_pair
 
 bool                    path_created
-bool                    on_finish_point
-bool                    on_finish_heading
 bool                    move
 bool                    rotation
 bool                    stop
 
+bool                    on_finish_point
+bool                    on_finish_heading
+bool                    connection_mode
+bool                    fine_tune_connection
+bool                    ready_to_connect
 

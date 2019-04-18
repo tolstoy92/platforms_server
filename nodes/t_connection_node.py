@@ -44,8 +44,7 @@ def obj_callback(msg_data):
                 PATH_CREATED = True
 
 
-rospy.init_node("test_t_connection_node")
-# img_sub = rospy.Subscriber("square_image", Image, img_callback)
+rospy.init_node("t_connection_node")
 objects_sub = rospy.Subscriber("field_objects", FieldObjects_msg, obj_callback)
 paths_data_publisher = rospy.Publisher("paths_data", AllPathes, queue_size=1)
 

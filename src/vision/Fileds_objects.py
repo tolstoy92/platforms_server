@@ -14,6 +14,7 @@ WHEEL_SIZE = rospy.get_param('WHEEL_SIZE')
 CONNECTION_DISTANCE = rospy.get_param('CONNECTION_DISTANCE')
 EPS = rospy.get_param('EPS')
 ANGLE_EPS = rospy.get_param('ANGLE_EPS')
+IK_CONNECTION_AREA = rospy.get_param('IK_CONNECTION_AREA')
 
 
 class Marker:
@@ -53,40 +54,21 @@ class Marker:
             self.real_world_position.update_real_world_position(x, y, z)
 
 
-class Goal(Marker):
-    def __init__(self, id, corners, real_world_position):
-        Marker.__init__(self, id, corners, real_world_position)
-
-    def __repr__(self):
-        return "Goal:\n\tid: {}\n\tposition: {}".format(self.id,
-                                                        self.center)
-
-    def prepare_msg(self):
-        msg = GoalData()
-        msg.id = self.id
-        msg.center = self.center
-        msg.corners = self.corners
-        return msg
-
-    def update_data(self, corners, position):
-        self.corners = corners
-        self.real_world_position = position
-
-
 class Robot(Marker):
     def __init__(self, id, corners, real_world_position):
         Marker.__init__(self, id, corners, real_world_position)
         self.__robot_size = ROBOT_SIZE
         self.__marker_size = MARKER_SIZE
 
-        self.direction = self.get_direction()
-        self.path = []
-        self.connection_path = []
-
+        self.direction = Point()
         self.actual_point = Point()
         self.next_point = Point()
         self.finish_point = Point()
         self.finish_heading_point = Point()
+        self.front_side = RobotFrontSide()
+        self.back_side = RobotBackSide()
+
+        self.path = []
 
         self.angle_to_actual_point = None
         self.angle_to_next_point = None
@@ -102,6 +84,9 @@ class Robot(Marker):
         self.self_rotation = False
 
         self.on_finish_point = False
+        self.connection_mode = False
+        self.fine_tune_connection = False
+        self.ready_to_connect = False
 
     def __repr__(self):
         return "Robot:\n\tid: {}\n\tposition: {}\n\treal world position: {}\n\t" \
@@ -115,8 +100,10 @@ class Robot(Marker):
     def prepare_msg(self):
         msg = RobotData()
         msg.id = self.id
-        msg.center = self.center
-        msg.direction = self.get_direction()
+        if not self.center.is_empty():
+            msg.center = self.center
+        if not self.direction.is_empty():
+            msg.direction = self.direction
         msg.corners = self.corners
         msg.path_created = self.path_created
         msg.real_world_position = self.real_world_position
@@ -137,6 +124,9 @@ class Robot(Marker):
         msg.rotation = self.self_rotation
         msg.move = self.move_forward
         msg.on_finish_point = self.on_finish_point
+        msg.connection_mode = self.connection_mode
+        msg.fine_tune_connection = self.fine_tune_connection
+        msg.ready_to_connect = self.ready_to_connect
         if not self.wheels_pair.is_empty():
             msg.wheels_pair = self.wheels_pair
         return msg
@@ -150,7 +140,7 @@ class Robot(Marker):
         if not self.on_finish_point:
             self.update_corners(corners)
             self.update_position()
-            self.update_direction()
+            self.update_front_and_back_side()
             if self.path_created:
                 if not self.finish_point:
                     self.finish_point = self.path[-1]
@@ -180,19 +170,31 @@ class Robot(Marker):
                             self.update_angles()
                             self.rotation()
         else:
-            self.stop()
+            if not self.connection_mode:
+                self.stop()
+                self.connection_mode = True
+                self.path = []
+                self.path_created = False
+                self.on_finish_point = False
+            else:
+                self.stop()
+                self.fine_tune_connection = True
+                self.connection_mode = False
+                self.on_finish_point = False
+                self.path = []
+                self.path_created = False
+
 
     def update_position(self):
-        if self.center:
-            if get_distance_between_points(self.center, self.get_center()) > 5:
-                self.trajectory.append([self.center.x, self.center.y])
         self.center = self.get_center()
 
     def update_corners(self, corners):
         self.corners = list(Point(xy.x, xy.y) for xy in corners)
 
-    def update_direction(self):
-        self.direction = self.get_direction()
+    def update_front_and_back_side(self):
+        self.direction, back_side = self.get_direction()
+        self.front_side.position = self.direction
+        self.back_side.position = back_side
 
     def on_point(self, point):
         if point:
@@ -277,7 +279,10 @@ class Robot(Marker):
         front_left_corner = self.corners[0]
         front_right_corner = self.corners[1]
         direction_point = get_line_cntr(front_left_corner, front_right_corner)
-        return direction_point
+        back_side_point1 = self.corners[2]
+        back_side_point2 = self.corners[3]
+        back_side_point = get_line_cntr(back_side_point1, back_side_point2)
+        return direction_point, back_side_point
 
     def get_position(self):
         return self.center
@@ -288,6 +293,7 @@ class Wheel():
         self.front_side_point = front_side_point
         self.back_side_point = back_side_point
         self.center = center
+        self.ik_sensor = IkSensor()
 
     def is_empty(self):
         if self.front_side_point and self.back_side_point and self.center: return False
@@ -296,10 +302,42 @@ class Wheel():
     def __call__(self, *args, **kwargs):
         return self.center, self.front_side_point, self.back_side_point
 
+
+class IkSensor():
+    def __init__(self):
+        self.ik_data = None
+        self.min_connection_ik_data = min(IK_CONNECTION_AREA)
+        self.max_connection_ik_data = max(IK_CONNECTION_AREA)
+        self.fine_tune_connection = False
+
+    def update_ik_data(self, ik_data=None):
+        self.ik_data = ik_data
+
+
+class RobotFrontSide():
+    ''' number 0 in mqtt msg '''
+    def __init__(self, position=None):
+        self.ik_sensor = IkSensor()
+        self.position = position
+
+    def get_ik_data(self):
+        if self.ik_sensor.ik_data():
+            return self.ik_sensor.ik
+
+    def update_position(self, front_side_position):
+        self.position = front_side_position
+
+
+class RobotBackSide(RobotFrontSide):
+    ''' number 2 in mqtt msg'''
+    def __init__(self, position=None):
+        RobotFrontSide.__init__(self, position)
+
+
 class Wheels_pair():
     def __init__(self, rigth_wheel=Wheel(), left_wheel=Wheel()):
-        self.right_wheel = rigth_wheel
-        self.left_wheel = left_wheel
+        self.right_wheel = rigth_wheel  #  number 1 in mqtt msg
+        self.left_wheel = left_wheel    #  number 3 in mqtt msg
 
     def is_empty(self):
         if self.right_wheel.is_empty() or self.left_wheel.is_empty():
@@ -328,6 +366,7 @@ class Wheels_pair():
             else:
                 if self.right_wheel.center.x > self.left_wheel.center.x:
                     self.right_wheel, self.left_wheel = self.left_wheel, self.right_wheel
+
 
     def get_axis_points(self, robots_marker_corners):
         axis_pt_right = get_line_cntr(robots_marker_corners[1], robots_marker_corners[2])
@@ -420,7 +459,7 @@ class Wheels_pair():
         return k
 
     def compute_wheels_sides(self, robot_center, dx, dy):
-        # wheel's sides are wheel's frontside and backside
+        # wheel's sides are wheel's frontside and backside. Only for visualization!
         if self.right_wheel.center.x >= self.left_wheel.center.x:
             if self.right_wheel.center.y <= self.left_wheel.center.y:
                 self.right_wheel.front_side_point = Point(robot_center.x + dx, robot_center.y - dy)
@@ -464,14 +503,6 @@ class Wheels_pair():
                 self.right_wheel.front_side_point = Point(self.right_wheel.center.x - ddx,
                                                           self.right_wheel.center.y - ddy)
 
-class PathPoint(Point):
-    def __init__(self, x=None, y=None):
-        Point.__init__(self, x, y)
-
-class HeadingPoint(Point):
-    def __init__(self, x=None, y=None):
-        Point.__init__(self, x, y)
-
 
 class Obstacle:
     def __init__(self, id, marker_list):
@@ -500,7 +531,6 @@ class Obstacle:
         obstacle_border_points = []
         geometric_center = self.compute_geometric_center(markers_list)
         if len(markers_list) > 1:
-            print(111)
             for marker in markers_list:
                 distances_to_geometric_center = {}
                 pts = self.increase_corners(marker, 50)
@@ -514,7 +544,6 @@ class Obstacle:
                     obstacle_border_points.append(distances_to_geometric_center.pop(
                                                   max(list(distances_to_geometric_center.keys()))))
         else:
-            print(222)
             if len(markers_list):
                 print(markers_list[0].get_corners())
                 print(self.increase_corners(markers_list[0], 50))
@@ -585,3 +614,23 @@ class Obstacle:
         ompl_points = self.remap_points_to_ompl_coord_system()
         points = self.points_to_list(ompl_points)
         return Path(array(points))
+
+
+class Goal(Marker):
+    def __init__(self, id, corners, real_world_position):
+        Marker.__init__(self, id, corners, real_world_position)
+
+    def __repr__(self):
+        return "Goal:\n\tid: {}\n\tposition: {}".format(self.id,
+                                                        self.center)
+
+    def prepare_msg(self):
+        msg = GoalData()
+        msg.id = self.id
+        msg.center = self.center
+        msg.corners = self.corners
+        return msg
+
+    def update_data(self, corners, position):
+        self.corners = corners
+        self.real_world_position = position
