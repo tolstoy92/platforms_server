@@ -17,25 +17,16 @@ MAIN_TOPIC = rospy.get_param('MAIN_TOPIC')
 
 
 def mqtt_reciever_callback(client, userdata, message):
-    if message.topic == 'ik_data':
+    if message.topic[:7] == 'ik_data':
+        data = message.topic.split('/')
+        robot_id = int(data[1])
+        robot_side = int(data[2])
         mqtt_msg = int(message.payload.decode("utf-8"))
         msg = IK_Data()
+        msg.robot_id = robot_id
+        msg.robot_side = robot_side
         msg.ik_data = mqtt_msg
         ik_data_pub.publish(msg)
-
-
-rospy.init_node("mqtt_node")
-ik_data_pub = rospy.Publisher("ik_data", IK_Data, queue_size=1)
-
-client = mqtt.Client("Server")
-msg_sender = MqttClientTools(SERVER_IP, PORT, MESSAGES_QOS, CONNECTON_TOPIC, DELAY_TIME,
-                             ik_data_pub)
-
-msg_sender.start_connection_client(client, )
-client.subscribe('ik_data', qos=0)
-client.on_message = mqtt_reciever_callback
-client.loop(WORKER_TIME)
-delays = {}
 
 
 def mqtt_transmitter_callback(msg_data):
@@ -55,6 +46,17 @@ def mqtt_transmitter_callback(msg_data):
             delays = msg_sender.send_msg_with_delay(delays, robot.id, client,
                                                     platform_topic, final_msg)
 
+
+rospy.init_node("mqtt_node")
+ik_data_pub = rospy.Publisher("ik_data", IK_Data, queue_size=1)
+
+client = mqtt.Client("Server")
+msg_sender = MqttClientTools(SERVER_IP, PORT, MESSAGES_QOS, CONNECTON_TOPIC, DELAY_TIME, ik_data_pub)
+msg_sender.start_connection_client(client, )
+client.subscribe('ik_data/#', qos=0)
+client.on_message = mqtt_reciever_callback
+client.loop(WORKER_TIME)
+delays = {}
 
 fields_data_sub = rospy.Subscriber("field_objects", FieldObjects, mqtt_transmitter_callback)
 

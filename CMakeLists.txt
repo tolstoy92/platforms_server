@@ -29,6 +29,7 @@ add_message_files (
   Step.msg
   Wheel.msg
   Wheels_pair.msg
+  All_Ik_MSGS.msg
   IK_Data.msg
 )
 

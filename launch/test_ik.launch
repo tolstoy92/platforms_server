@@ -5,5 +5,4 @@
     <rosparam command = "load" file = "$(find platforms_server)/config/path_planner.config" />
 
     <node pkg="platforms_server" name="mqtt_node" type="mqtt_node.py" output="screen"/>
-    <node pkg="platforms_server" name="test_ik_sensor" type="test_ik_sensor.py" output="screen"/>
 </launch>

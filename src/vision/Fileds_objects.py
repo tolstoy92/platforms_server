@@ -61,7 +61,7 @@ class Robot(Marker):
         self.__marker_size = MARKER_SIZE
 
         self.direction = Point()
-        self.actual_point = Point()
+        self.actual_point = self.center
         self.next_point = Point()
         self.finish_point = Point()
         self.finish_heading_point = Point()
@@ -406,7 +406,8 @@ class Wheels_pair():
             y_right = robot_center.y + d_y_right
             x_left = robot_center.x - d_x_left
             y_left = robot_center.y - d_y_left
-        elif robot_direction.y > robot_center.y and robot_direction.x >= robot_center.x:
+        elif robot_direction.y > robot_center.y and robot_direction.x >= robot_center.x or \
+                robot_direction.y <= robot_center.y and robot_direction.x < robot_center.x:
             x_right = robot_center.x + d_x_right
             y_right = robot_center.y - d_y_right
             x_left = robot_center.x - d_x_left
@@ -416,11 +417,11 @@ class Wheels_pair():
             y_right = robot_center.y - d_y_right
             x_left = robot_center.x + d_x_left
             y_left = robot_center.y + d_y_left
-        elif robot_direction.y <= robot_center.y and robot_direction.x < robot_center.x:
-            x_right = robot_center.x + d_x_right
-            y_right = robot_center.y - d_y_right
-            x_left = robot_center.x - d_x_left
-            y_left = robot_center.y + d_y_left
+        # elif robot_direction.y <= robot_center.y and robot_direction.x < robot_center.x:
+        #     x_right = robot_center.x + d_x_right
+        #     y_right = robot_center.y - d_y_right
+        #     x_left = robot_center.x - d_x_left
+        #     y_left = robot_center.y + d_y_left
         else:
             x_right, x_left, y_right, y_left = None, None, None, None
 

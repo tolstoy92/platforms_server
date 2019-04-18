@@ -2,7 +2,7 @@ import rospy
 from math import sqrt
 # from constants.robot_constants import EPS
 from vision.Fileds_objects import Robot, Goal, Marker, RealWorldPoint
-from platforms_server.msg import FieldObjects as FieldObjects_msg
+from platforms_server.msg import FieldObjects as FieldObjects_msg, IK_Data
 
 EPS = rospy.get_param('EPS')
 
@@ -39,6 +39,9 @@ class MarkersAnalizer:
         markers_list = list(Marker(marker_id, marker_corners, RealWorldPoint(position.x, position.y, position.z)) for \
                             marker_id, marker_corners, position in list(zip(ids, corners, positions)))
         self.parse_fields_objects_by_id(markers_list)
+
+    def ik_callback(self, msg_data):
+        print()
 
     def get_robots(self):
         return self.robots

@@ -44,7 +44,7 @@ class Visualizer():
                 cv2.imwrite(img_name, self.IMG)
                 self.counter += 1
                 cv2.imshow("image", self.IMG)
-                if cv2.waitKey(3) & 0xFF == 27:
+                if cv2.waitKey(10) & 0xFF == 27:
                     self.RUN = not self.RUN
             except CvBridgeError as e:
                 print(e)
@@ -67,45 +67,46 @@ class Visualizer():
     def draw_objects(self):
         if self.fields_objects:
             for robot in self.fields_objects.robots:
-                # if not robot.on_finish_point or not robot.on_finish_heading:
-                self.draw_point(robot.center)
+                if not robot.on_finish_point or not robot.on_finish_heading:
+                    self.draw_point(robot.center)
                 for pt in robot.path:
                     self.draw_point(pt, size=8)
+
                 self.draw_point(robot.direction, color=(50, 50, 250), size=5)
-                # cv2.line(self.IMG, (int(robot.center.x), int(robot.center.y)),
-                #          (int(robot.direction.x), int(robot.direction.y)), color=(100, 100, 255), thickness=3)
                 cv2.putText(self.IMG, str(robot.id), (int(robot.center.x) + 5, int(robot.center.y)),
                             cv2.FONT_HERSHEY_PLAIN, 2,
                             (255, 100, 60), 3)
+
                 if robot.actual_point:
                     self.draw_crest(robot.actual_point, color=(100, 255, 50))
                     cv2.putText(self.IMG, str(robot.id), (int(robot.actual_point.x) + 5, int(robot.actual_point.y)), cv2.FONT_HERSHEY_PLAIN, 2,
                                 (255, 100, 60), 3)
+                    cv2.line(self.IMG, (int(robot.center.x), int(robot.center.y)),
+                             (int(robot.actual_point.x), int(robot.actual_point.y)), color=(255, 100, 255), thickness=1)
                 if robot.next_point:
                     self.draw_crest(robot.next_point, color=(255, 50, 50))
-                    # cv2.line(self.IMG, (int(robot.center.x), int(robot.center.y)),
-                    #         (int(robot.actual_point.x), int(robot.actual_point.y)), color=(255, 100, 255), thickness=1)
-                if robot.finish_heading_point:
-                    self.draw_point(robot.finish_heading_point)
-                # if robot.wheels_pair:
-                #     self.draw_point(robot.wheels_pair.right_wheel.center, color=(255, 255, 255), size=8)
-                #     self.draw_point(robot.wheels_pair.left_wheel.center, color=(255, 255, 255))
+
+
+                # r_c_x, r_c_y = int(robot.wheels_pair.right_wheel.center.x), int(robot.wheels_pair.right_wheel.center.y)
+                # cv2.circle(self.IMG, (r_c_x, r_c_y), 5, (255, 255, 255), 8)
+                # self.draw_point(robot.wheels_pair.right_wheel.center, color=(255, 255, 255), size=8)
+                # self.draw_point(robot.wheels_pair.left_wheel.center, color=(255, 255, 255), size=8)
                 #
-                #     self.draw_point(robot.wheels_pair.right_wheel.front_side_point, color=(50, 250, 50), size=20)
-                #     self.draw_point(robot.wheels_pair.right_wheel.back_side_point, color=(50, 250, 50), size=10)
-                #
-                #     self.draw_point(robot.wheels_pair.left_wheel.front_side_point, color=(50, 50, 250), size=20)
-                #     self.draw_point(robot.wheels_pair.left_wheel.back_side_point, color=(50, 50, 250), size=10)
-                #
-                #     cv2.line(self.IMG, (int(robot.wheels_pair.right_wheel.front_side_point.x),
-                #                         int(robot.wheels_pair.right_wheel.front_side_point.y)),
-                #              (int(robot.wheels_pair.right_wheel.back_side_point.x),
-                #               int(robot.wheels_pair.right_wheel.back_side_point.y)), (0, 255, 0), 2)
-                #
-                #     cv2.line(self.IMG, (int(robot.wheels_pair.left_wheel.front_side_point.x),
-                #                         int(robot.wheels_pair.left_wheel.front_side_point.y)),
-                #              (int(robot.wheels_pair.left_wheel.back_side_point.x),
-                #               int(robot.wheels_pair.left_wheel.back_side_point.y)), (0, 255, 0), 2)
+                # self.draw_point(robot.wheels_pair.right_wheel.front_side_point, color=(50, 250, 50), size=20)
+                # self.draw_point(robot.wheels_pair.right_wheel.back_side_point, color=(50, 250, 50), size=10)
+                # #
+                # self.draw_point(robot.wheels_pair.left_wheel.front_side_point, color=(50, 50, 250), size=20)
+                # self.draw_point(robot.wheels_pair.left_wheel.back_side_point, color=(50, 50, 250), size=10)
+                    #
+                    # self.IMG = cv2.line(self.IMG, (int(robot.wheels_pair.right_wheel.front_side_point.x),
+                    #                                int(robot.wheels_pair.right_wheel.front_side_point.y)),
+                    #                     (int(robot.wheels_pair.right_wheel.back_side_point.x),
+                    #                      int(robot.wheels_pair.right_wheel.back_side_point.y)), (0, 255, 0), 2)
+                    #
+                    # cv2.line(self.IMG, (int(robot.wheels_pair.left_wheel.front_side_point.x),
+                    #                     int(robot.wheels_pair.left_wheel.front_side_point.y)),
+                    #          (int(robot.wheels_pair.left_wheel.back_side_point.x),
+                    #           int(robot.wheels_pair.left_wheel.back_side_point.y)), (0, 255, 0), 2)
 
             # for obstacle in self.fields_objects.obstacles:
             #     self.draw_point(obstacle.center)
