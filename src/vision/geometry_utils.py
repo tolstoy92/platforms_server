@@ -1,6 +1,8 @@
 import rospy
 import numpy as np
 from math import sqrt, acos, degrees
+from sympy import symbols, solve
+
 # from constants.vision_constants import *
 
 CAMERA_INDEX = rospy.get_param('CAMERA_INDEX')
@@ -93,6 +95,54 @@ def get_crossing_lines_point(eq1, eq2):
     x = (b2 - b1) / (k1 - k2)
     y = k1*x + b1
     return Point(x, y)
+
+def get_points_by_distance_to_point_on_line(line_eq, point_on_line, distance):
+
+    k, b = line_eq
+    X = symbols('x')
+    d = distance
+    x, y = point_on_line.x, point_on_line.y
+    eq = (X - x)**2 + ((k*X + b) - y)**2 - d**2
+
+    pts_lst = solve([eq], X)
+
+    pt1_x, pt2_x = pts_lst
+    pt1_x, pt2_x = pt1_x[0], pt2_x[0]
+
+    pt1_y = k * pt1_x + b
+    pt2_y = k * pt2_x + b
+
+    pt1 = Point(abs(pt1_x), abs(pt1_y))
+    pt2 = Point(abs(pt2_x), abs(pt2_y))
+
+    print(pt1, pt2)
+
+    # if get_distance_between_points(self.riding_robot.center, pt1) <= \
+    #    get_distance_between_points(self.riding_robot.center, pt2):
+    #     riding_robot_connection_point = pt1
+    # else:
+    #     riding_robot_connection_point = pt2
+
+    #
+    # k, b = line_eq
+    # x, y = point_on_line.x, point_on_line.y
+    # d = distance
+    #
+    # a_ = 1 + k**2
+    # b_ = (2*k*b) + (2*x) - (2*y*k)
+    # c_ = x**2 + y**2 + 2*y*b + b**2 - d**2
+    #
+    # D = b_**2 - (4*a_*c_)
+    #
+    # print('conn_D', D)
+    #
+    #
+    # x1, x2 = (-b_ + sqrt(D))/(2*a_), (-b_ - sqrt(D))/(2*a_)
+    # y1, y2 = k*x1 + b, k*x2 + b
+    #
+    # return Point(int(x1), int(y1)), Point(int(x2), int(y2))
+    return pt1, pt2
+
 
 class Point:
     def __init__(self, x=None, y=None, is_heading=False):

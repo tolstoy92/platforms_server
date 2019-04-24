@@ -20,7 +20,6 @@ class Visualizer():
         img_sub = rospy.Subscriber("square_image", Image, self.img_callback)
         field_objects_sub = rospy.Subscriber("field_objects", FieldObjects_msg, self.objects_callback)
         cv2.namedWindow("image", cv2.WINDOW_NORMAL)
-
         self.path_to_save = str(datetime.datetime.now())[:-3]
         self.folder = os.path.join(os.getcwd(), self.path_to_save)
         os.mkdir(self.folder)

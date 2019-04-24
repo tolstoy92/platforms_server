@@ -2,8 +2,9 @@
 
 
 import rospy
-from vision.Connection import ParallelConnection, RobotsPair
+from vision.Connection import TConnection, RobotsPair, FineTuneConnection
 from platforms_server.msg import AllPathes, Path, FieldObjects as FieldObjects_msg
+
 
 robots_num = 2
 PATH_CREATED = False
@@ -22,23 +23,20 @@ def obj_callback(msg_data):
         final_msg = AllPathes()
         if len(msg_data.robots) == robots_num:
             robot1, robot2 = msg_data.robots[0], msg_data.robots[1]
-            if robot1.connection_mode and robot2.connection_mode:
-                robots_pair = RobotsPair(robot1, robot2)
-                robot1_path_data, robot2_path_data = robots_pair.create_parallel_connection_path()
-
-                robot1_id, robot1_path = robot1_path_data
-                robot2_id, robot2_path = robot2_path_data
-
-                r1_path_msg = create_msg(robot1_id, robot1_path)
-                r2_path_msg = create_msg(robot2_id, robot2_path)
-
-                final_msg.paths_list.append(r1_path_msg)
-                final_msg.paths_list.append(r2_path_msg)
+            if robot1.fine_tune_connection and robot2.fine_tune_connection:
+                fine_tuner = FineTuneConnection(robot1, robot2)
+                robot1_conn_side_idx = fine_tuner.get_robot_connection_side(robot1, robot2)
+                conn_line_eq = fine_tuner.get_conn_line_eq(robot1_conn_side_idx)
+                riding_line_eq = fine_tuner.get_riding_line_eq(conn_line_eq, robot2.center)
+                fine_tune_path = list(fine_tuner.get_riding_points(conn_line_eq, riding_line_eq))
+                msg = create_msg(robot2.id, fine_tune_path)
+                final_msg.paths_list.append(msg)
+                print(final_msg)
                 paths_data_publisher.publish(final_msg)
                 PATH_CREATED = True
 
 
-rospy.init_node("parallel_connection_node")
+rospy.init_node("fine_tune_node")
 objects_sub = rospy.Subscriber("field_objects", FieldObjects_msg, obj_callback)
 paths_data_publisher = rospy.Publisher("paths_data", AllPathes, queue_size=1)
 

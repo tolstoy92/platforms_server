@@ -31,6 +31,7 @@ add_message_files (
   Wheels_pair.msg
   All_Ik_MSGS.msg
   IK_Data.msg
+  RobotSide.msg
 )
 
 

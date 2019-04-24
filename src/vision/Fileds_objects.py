@@ -61,12 +61,12 @@ class Robot(Marker):
         self.__marker_size = MARKER_SIZE
 
         self.direction = Point()
-        self.actual_point = self.center
+        self.actual_point = Point()
         self.next_point = Point()
         self.finish_point = Point()
         self.finish_heading_point = Point()
-        self.front_side = RobotFrontSide()
-        self.back_side = RobotBackSide()
+        self.front_side = RobotFrontSide(self.center)
+        self.back_side = RobotBackSide(self.center)
 
         self.path = []
 
@@ -86,6 +86,7 @@ class Robot(Marker):
         self.on_finish_point = False
         self.connection_mode = False
         self.fine_tune_connection = False
+        self.last_fine_tine_path_point = Point()
         self.ready_to_connect = False
 
     def __repr__(self):
@@ -127,6 +128,9 @@ class Robot(Marker):
         msg.connection_mode = self.connection_mode
         msg.fine_tune_connection = self.fine_tune_connection
         msg.ready_to_connect = self.ready_to_connect
+        if not self.front_side.center.is_empty():
+            msg.front_side.center = self.front_side.center
+            msg.back_side.center = self.back_side.center
         if not self.wheels_pair.is_empty():
             msg.wheels_pair = self.wheels_pair
         return msg
@@ -137,19 +141,91 @@ class Robot(Marker):
         self.wheels_pair.get_wheels_centers(self.corners, self.center, self.direction)
         self.wheels_pair.update_wheel_edges(self.corners, self.center)
 
-        if not self.on_finish_point:
-            self.update_corners(corners)
-            self.update_position()
-            self.update_front_and_back_side()
-            if self.path_created:
-                if not self.finish_point:
-                    self.finish_point = self.path[-1]
-                if self.actual_point.is_empty():
-                    self.update_actual_point()
-                self.update_angles()
-                if self.on_point(self.actual_point):
-                    self.update_actual_point()
+        if not self.on_finish_point and not self.connection_mode and not self.fine_tune_connection:
+            print('-1')
+            self.update_data_in_riding_mode(corners)
+
+        elif self.on_finish_point and not self.connection_mode and not self.fine_tune_connection:
+            print('0')
+            self.stop()
+            self.connection_mode = True
+            self.path = []
+            self.path_created = False
+            self.on_finish_point = False
+
+        elif not self.on_finish_point and self.connection_mode and not self.fine_tune_connection:
+            print('1')
+            self.update_data_in_riding_mode(corners)
+
+        elif self.on_finish_point and self.connection_mode and not self.fine_tune_connection:
+            print('2')
+            self.stop()
+            self.actual_point = Point()
+            self.fine_tune_connection = True
+            self.connection_mode = True
+            self.on_finish_point = False
+            self.path = []
+            self.path_created = False
+
+        elif not self.on_finish_point and self.connection_mode and self.fine_tune_connection:
+            print('3')
+            self.update_data_in_riding_mode(corners)
+
+        elif self.on_finish_point and self.connection_mode and self.fine_tune_connection:
+            print('4')
+            self.stop()
+            self.path = []
+            self.path_created = True
+            self.on_finish_point = True
+
+
+    def update_data_in_riding_mode(self, corners):
+        self.update_corners(corners)
+        self.update_position()
+        self.update_front_and_back_sides()
+        if self.path_created:
+            if self.finish_point.is_empty():
+                self.finish_point = self.path[-1]
+            if self.actual_point.is_empty():
+                self.update_actual_point()
+            self.update_angles()
+            if self.on_point(self.actual_point):
+                self.update_actual_point()
+            else:
+                if not self.actual_point.is_heading:
+                    if abs(self.angle_to_actual_point) <= 90:
+                        if abs(self.angle_to_actual_point) < ANGLE_EPS:
+                            self.move()
+                        else:
+                            self.update_angles()
+                            self.rotation()
+                    else:
+                        if abs(180 - self.angle_to_actual_point) < ANGLE_EPS:
+                            self.move()
+                        else:
+                            self.update_angles()
+                            self.rotation()
                 else:
+                    if abs(self.angle_to_actual_point) < ANGLE_EPS or 180 - abs(self.angle_to_actual_point) < ANGLE_EPS:
+                        self.update_actual_point()
+                    else:
+                        self.update_angles()
+                        self.rotation()
+
+    def update_data_in_fine_tune_mode(self, corners):
+        self.update_corners(corners)
+        self.update_position()
+        self.update_front_and_back_sides()
+        if self.path_created:
+            if self.finish_point.is_empty():
+               self.finish_point = self.path[-1]
+            if self.actual_point.is_empty():
+                self.update_actual_point()
+            self.update_angles()
+            if self.on_point(self.actual_point):
+                self.update_actual_point()
+            else:
+                if not self.actual_point.is_heading:
                     if not self.actual_point.is_heading:
                         if abs(self.angle_to_actual_point) <= 90:
                             if abs(self.angle_to_actual_point) < ANGLE_EPS:
@@ -169,21 +245,6 @@ class Robot(Marker):
                         else:
                             self.update_angles()
                             self.rotation()
-        else:
-            if not self.connection_mode:
-                self.stop()
-                self.connection_mode = True
-                self.path = []
-                self.path_created = False
-                self.on_finish_point = False
-            else:
-                self.stop()
-                self.fine_tune_connection = True
-                self.connection_mode = False
-                self.on_finish_point = False
-                self.path = []
-                self.path_created = False
-
 
     def update_position(self):
         self.center = self.get_center()
@@ -191,10 +252,10 @@ class Robot(Marker):
     def update_corners(self, corners):
         self.corners = list(Point(xy.x, xy.y) for xy in corners)
 
-    def update_front_and_back_side(self):
+    def update_front_and_back_sides(self):
         self.direction, back_side = self.get_direction()
-        self.front_side.position = self.direction
-        self.back_side.position = back_side
+        self.front_side.center = self.direction
+        self.back_side.center = back_side
 
     def on_point(self, point):
         if point:
@@ -213,6 +274,7 @@ class Robot(Marker):
         if self.path_created:
             if len(self.path):
                 self.actual_point = self.path.pop(0)
+                print(self.actual_point.x)
                 if len(self.path):
                     self.next_point = self.path[0]
                 else:
@@ -246,11 +308,13 @@ class Robot(Marker):
     def update_angles(self):
         if not self.actual_point.is_empty():
             sign_angle_to_actual_point = get_angle_sign_pt_to_line(self.direction, self.center, self.actual_point)
-            self.angle_to_actual_point = get_angle_by_3_points(self.direction, self.actual_point, self.center) * sign_angle_to_actual_point
+            self.angle_to_actual_point = get_angle_by_3_points(self.direction, self.actual_point, self.center) * \
+                                                                sign_angle_to_actual_point
             self.actual_angle = self.angle_to_actual_point
         if not self.next_point.is_empty():
             sign_angle_to_next_point = get_angle_sign_pt_to_line(self.direction, self.center, self.actual_point)
-            self.angle_to_next_point = get_angle_by_3_points(self.direction, self.next_point, self.center) * sign_angle_to_next_point
+            self.angle_to_next_point = get_angle_by_3_points(self.direction, self.next_point, self.center) * \
+                                                              sign_angle_to_next_point
             self.angle_to_next_point = self.angle_to_next_point
         else:
             self.angle_to_next_point = None
@@ -294,6 +358,7 @@ class Wheel():
         self.back_side_point = back_side_point
         self.center = center
         self.ik_sensor = IkSensor()
+        self.is_connection_side = False
 
     def is_empty(self):
         if self.front_side_point and self.back_side_point and self.center: return False
@@ -316,16 +381,17 @@ class IkSensor():
 
 class RobotFrontSide():
     ''' number 0 in mqtt msg '''
-    def __init__(self, position=None):
+    def __init__(self, center =None):
         self.ik_sensor = IkSensor()
-        self.position = position
+        self.center  = center
+        self.is_connection_side = False
 
     def get_ik_data(self):
         if self.ik_sensor.ik_data():
             return self.ik_sensor.ik
 
     def update_position(self, front_side_position):
-        self.position = front_side_position
+        self.center = front_side_position
 
 
 class RobotBackSide(RobotFrontSide):
@@ -417,11 +483,6 @@ class Wheels_pair():
             y_right = robot_center.y - d_y_right
             x_left = robot_center.x + d_x_left
             y_left = robot_center.y + d_y_left
-        # elif robot_direction.y <= robot_center.y and robot_direction.x < robot_center.x:
-        #     x_right = robot_center.x + d_x_right
-        #     y_right = robot_center.y - d_y_right
-        #     x_left = robot_center.x - d_x_left
-        #     y_left = robot_center.y + d_y_left
         else:
             x_right, x_left, y_right, y_left = None, None, None, None
 

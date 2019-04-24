@@ -12,6 +12,9 @@ Point2d                 finish_heading_point
 int32                   angle_to_heading_point
 geometry_msgs/Point     real_world_position
 
+RobotSide               front_side
+RobotSide               back_side
+
 Wheels_pair             wheels_pair
 
 bool                    path_created

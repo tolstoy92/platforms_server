@@ -2,14 +2,13 @@ import rospy
 from vision.geometry_utils import *
 from math import sqrt
 from sympy import symbols, solve
-from platforms_server.msg import IK_Data
-import time
+
 
 MARKER_SIZE = rospy.get_param('MARKER_SIZE')
 CONNECTION_DISTANCE = rospy.get_param('CONNECTION_DISTANCE')
 ROBOT_H = rospy.get_param('ROBOT_H')
 ROBOT_SIZE = rospy.get_param('ROBOT_SIZE')
-
+TUNE_CONNECTION_DISTANCE = rospy.get_param('TUNE_CONNECTION_DISTANCE')
 
 class ParallelConnection():
     def __init__(self, robot1, robot2):
@@ -131,7 +130,6 @@ class TConnection(ParallelConnection):
         pts_lst = solve([eq], X)
 
         pt1_x, pt2_x = pts_lst
-
         pt1_x, pt2_x = pt1_x[0], pt2_x[0]
 
         pt1_y = k * pt1_x + b
@@ -164,4 +162,78 @@ class TConnection(ParallelConnection):
         print('distance: {}'.format(dist))
 
 
+class RobotsPair():
+    def __init__(self, robot1, robot2):
+        self.robot1 = robot1
+        self.robot2 = robot2
 
+    def create_parallel_connection_path(self):
+        connector = ParallelConnection(self.robot1, self.robot2)
+        pt1 = connector.find_point1()
+        pt2 = connector.find_point2(pt1)
+        return (self.robot1.id, [pt1]), (self.robot2.id, [pt2])
+
+    def create_t_connection_path(self):
+        connector = TConnection(self.robot1, self.robot2)
+        base_robot, riding_robot = connector.chose_base_robot()
+        base_robot_heading_point = connector.find_base_robot_heading_points()
+        base_robot_path = [base_robot_heading_point]
+        riding_robot_conn_point = connector.get_riding_robot_connection_point()
+        riding_robot_path = connector.create_riding_robot_connection_path(riding_robot_conn_point)
+        return (riding_robot.id, riding_robot_path), (base_robot.id, base_robot_path)
+
+
+class FineTuneConnection:
+    def __init__(self, base_robot, riding_robot):
+        self.base_robot = base_robot
+        self.riding_robot = riding_robot
+        self.last_path_point = Point()
+
+        m_in_pix = get_meters_in_pix(MARKER_SIZE, self.riding_robot.corners)
+        print('m_in_p', m_in_pix)
+        tune_distance_in_m = TUNE_CONNECTION_DISTANCE
+        self.tune_distance = tune_distance_in_m / m_in_pix
+        print('t_dist', self.tune_distance)
+        robot_size_in_pix = ROBOT_SIZE / m_in_pix
+        connection_distance_in_pix = CONNECTION_DISTANCE / m_in_pix
+        self.riding_robot_dist_to_base_robot_at_start = connection_distance_in_pix + (robot_size_in_pix / 2)
+
+        self.base_robot_connection_side_idx = None
+        self.base_robot_connection_side = Point()
+        self.base_robot_connection_side_idx = None
+        self.riding_robot_connection_side = Point()
+
+    def get_robot_side_by_idx(self, robot, idx):
+        if idx == 0:
+            return robot.front_side
+        elif idx == 1:
+            return robot.wheels_pair.right_wheel
+        elif idx == 2:
+            return robot.back_side
+        elif idx == 3:
+            return robot.wheels_pair.left_wheel
+
+    def get_robot_connection_side(self, robot1, robot2):
+        robots_sides = [robot1.front_side, robot1.wheels_pair.right_wheel,
+                        robot1.back_side, robot1.wheels_pair.left_wheel]
+        distances = []
+        for side in robots_sides:
+            distances.append(get_distance_between_points(side.center, robot2.center))
+        idx = distances.index(min(distances))
+        robots_sides[idx].is_connection_side = True
+        return idx
+
+    def get_conn_line_eq(self, base_robot_connection_idx):
+        base_conn_point = self.get_robot_side_by_idx(self.base_robot, base_robot_connection_idx)
+        conn_line_eq = get_line_equation(base_conn_point.center, self.base_robot.center)
+        return conn_line_eq
+
+    def get_riding_line_eq(self, conn_line_eq, point_on_conn_line):
+        riding_line_eq = get_perpendicular_line_equation(conn_line_eq, point_on_conn_line)
+        return riding_line_eq
+
+    def get_riding_points(self, conn_line_eq, riding_line_eq):
+        crossing_point = get_crossing_lines_point(riding_line_eq, conn_line_eq)
+        pt1, pt2 = get_points_by_distance_to_point_on_line(riding_line_eq, crossing_point, self.tune_distance)
+        print(pt1, pt2)
+        return pt1, pt2

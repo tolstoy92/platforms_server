@@ -11,6 +11,8 @@
     <node pkg="platforms_server" name="test_set_path" type="test_set_path.py" output="screen"/>
     <node pkg="platforms_server" name="mqtt_node" type="mqtt_node.py" output="screen"/>
 
-    <!-- Connection node !!!!  parallel_connection_node of t_connection_node  !!!!! -->
-    <node pkg="platforms_server" name="parallel_connection_node" type="parallel_connection_node.py" output="screen"/>
+    <node pkg="platforms_server" name="t_connection_node" type="t_connection_node.py" output="screen"/>
+
+    <node pkg="platforms_server" name="fine_tune_node" type="fine_tune_node.py" output="screen"/>
+
 </launch>
