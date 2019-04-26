@@ -89,6 +89,9 @@ class Robot(Marker):
         self.last_fine_tine_path_point = Point()
         self.ready_to_connect = False
 
+        self.start_connection = False
+        self.start_fine_tune_mode = False
+
     def __repr__(self):
         return "Robot:\n\tid: {}\n\tposition: {}\n\treal world position: {}\n\t" \
                "direction: {}\n\tmove forward: {}\n\trotation: {}\n\t" \
@@ -142,25 +145,24 @@ class Robot(Marker):
         self.wheels_pair.update_wheel_edges(self.corners, self.center)
 
         if not self.on_finish_point and not self.connection_mode and not self.fine_tune_connection:
-            print('-1')
             self.update_data_in_riding_mode(corners)
 
         elif self.on_finish_point and not self.connection_mode and not self.fine_tune_connection:
-            print('0')
             self.stop()
             self.connection_mode = True
+            self.actual_point = Point()
             self.path = []
             self.path_created = False
             self.on_finish_point = False
 
         elif not self.on_finish_point and self.connection_mode and not self.fine_tune_connection:
-            print('1')
-            self.update_data_in_riding_mode(corners)
+            if self.start_connection:
+                self.update_data_in_riding_mode(corners)
+            else:
+                self.stop()
 
         elif self.on_finish_point and self.connection_mode and not self.fine_tune_connection:
-            print('2')
             self.stop()
-            self.actual_point = Point()
             self.fine_tune_connection = True
             self.connection_mode = True
             self.on_finish_point = False
@@ -168,11 +170,12 @@ class Robot(Marker):
             self.path_created = False
 
         elif not self.on_finish_point and self.connection_mode and self.fine_tune_connection:
-            print('3')
-            self.update_data_in_riding_mode(corners)
+            if self.start_fine_tune_mode:
+                self.update_data_in_riding_mode(corners)
+            else:
+                self.stop()
 
         elif self.on_finish_point and self.connection_mode and self.fine_tune_connection:
-            print('4')
             self.stop()
             self.path = []
             self.path_created = True
@@ -265,6 +268,7 @@ class Robot(Marker):
             else:
                 if get_angle_by_3_points(self.direction, point, self.center) <= ANGLE_EPS:
                     return True
+                    self.actual_point = Point()
                 else:
                     return False
         else:
@@ -274,7 +278,6 @@ class Robot(Marker):
         if self.path_created:
             if len(self.path):
                 self.actual_point = self.path.pop(0)
-                print(self.actual_point.x)
                 if len(self.path):
                     self.next_point = self.path[0]
                 else:
@@ -569,7 +572,6 @@ class Wheels_pair():
 class Obstacle:
     def __init__(self, id, marker_list):
         self.id = id
-        print(self.id)
         unsorted_points = self.get_unsorted_obstacles_points(marker_list)
         self.geometric_center = self.compute_geometric_center(marker_list)
         self.obstacle_points = self.sort_obstacles_points(unsorted_points)
@@ -607,8 +609,6 @@ class Obstacle:
                                                   max(list(distances_to_geometric_center.keys()))))
         else:
             if len(markers_list):
-                print(markers_list[0].get_corners())
-                print(self.increase_corners(markers_list[0], 50))
                 obstacle_border_points = list(pt for pt in self.increase_corners(markers_list[0], 50))
                                               # markers_list[0].get_corners())
 

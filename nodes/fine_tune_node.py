@@ -14,6 +14,8 @@ def create_msg(id, path):
     path_msg = Path()
     path_msg.platform_id = id
     path_msg.path_points = path
+    path_msg.start_connection = True
+    path_msg.start_fine_tune_mode = True
     return path_msg
 
 
@@ -31,7 +33,6 @@ def obj_callback(msg_data):
                 fine_tune_path = list(fine_tuner.get_riding_points(conn_line_eq, riding_line_eq))
                 msg = create_msg(robot2.id, fine_tune_path)
                 final_msg.paths_list.append(msg)
-                print(final_msg)
                 paths_data_publisher.publish(final_msg)
                 PATH_CREATED = True
 

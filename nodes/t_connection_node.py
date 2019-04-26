@@ -14,6 +14,7 @@ def create_msg(id, path):
     path_msg = Path()
     path_msg.platform_id = id
     path_msg.path_points = path
+    path_msg.start_connection = True
     return path_msg
 
 

@@ -10,7 +10,7 @@ from platforms_server.msg import AllPathes, Path, FieldObjects as FieldObjects_m
 
 
 MARKER_IDS = [2, 3, 4]
-path_points_num = 5  # to change points number!
+path_points_num = 2  # to change points number!
 robots_num = 2
 
 image = None

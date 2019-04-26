@@ -27,10 +27,14 @@ class MarkersAnalizer:
     def paths_callback(self, msg_data):
         for path in msg_data.paths_list:
             robot_id = path.platform_id
+            start_connection = path.start_connection
+            start_fine_tune_mode = path.start_fine_tune_mode
             path_points = path.path_points
             if robot_id in list(robot.id for robot in self.robots):
                 robot = list(filter(lambda robot: robot.id == robot_id, self.robots))[0]
                 robot.set_path(path_points)
+                robot.start_connection = start_connection
+                robot.start_fine_tune_mode = start_fine_tune_mode
 
     def update_fields_object_by_id(self, msg_data):
         ids = [object.id for object in msg_data.markers]
