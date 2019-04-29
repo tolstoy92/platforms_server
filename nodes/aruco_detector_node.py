@@ -39,7 +39,6 @@ def callback(data):
                                zip(ids_msgs_list, corners_msgs_list, tvecs))
                 aruco_data_msg.markers = markers
                 markers_data_publisher.publish(aruco_data_msg)
-
         except CvBridgeError as e:
             print(e)
     else:

@@ -18,12 +18,15 @@ IK_CONNECTION_AREA = rospy.get_param('IK_CONNECTION_AREA')
 
 
 class Marker:
-    def __init__(self, id, corners, real_world_position):
+    def __init__(self, id, corners):
         self.__marker_size = MARKER_SIZE
         self.id = id
         self.corners = list(Point(xy.x, xy.y) for xy in corners)
         self.center = self.get_center()
-        self.real_world_position = real_world_position
+        # self.real_world_position = real_world_position
+
+    def __repr__(self):
+        return "ID: {}, center: {}, corners: {}".format(self.id, self.center, self.corners)
 
     def get_corners(self):
         return self.corners
@@ -46,17 +49,31 @@ class Marker:
         points = self.points_to_list(ompl_corners)
         return Path(array(points))
 
-    def update_real_world_position(self, position):
-        x, y, z = position.x, position.y, position.z
-        if self.real_world_position.is_empty:
-            self.real_world_position = RealWorldPoint(x, y, z)
-        else:
-            self.real_world_position.update_real_world_position(x, y, z)
+    # def update_real_world_position(self, position):
+    #     x, y, z = position.x, position.y, position.z
+    #     if self.real_world_position.is_empty:
+    #         self.real_world_position = RealWorldPoint(x, y, z)
+    #     else:
+    #         self.real_world_position.update_real_world_position(x, y, z)
+
+
+class MarkersPair(Marker):
+    def __init__(self, left_marker, right_marker):
+        self.left_marker = left_marker
+        self.right_marker = right_marker
+        self.id = left_marker.id
+        self.corners = self.get_pair_corners()
+        self.center = self.get_center()
+
+    def get_pair_corners(self):
+        left_corner1, left_corner2 = self.left_marker.corners[0], self.left_marker.corners[3]
+        right_corner1, right_corner2 = self.right_marker.corners[1], self.right_marker.corners[2]
+        return [left_corner1, right_corner1, right_corner2, left_corner2]
 
 
 class Robot(Marker):
-    def __init__(self, id, corners, real_world_position):
-        Marker.__init__(self, id, corners, real_world_position)
+    def __init__(self, id, corners):
+        Marker.__init__(self, id, corners)
         self.__robot_size = ROBOT_SIZE
         self.__marker_size = MARKER_SIZE
 
@@ -110,7 +127,7 @@ class Robot(Marker):
             msg.direction = self.direction
         msg.corners = self.corners
         msg.path_created = self.path_created
-        msg.real_world_position = self.real_world_position
+        # msg.real_world_position = self.real_world_position
         if self.path_created:
             msg.path = self.path
         if not self.actual_point.is_empty():
@@ -138,8 +155,8 @@ class Robot(Marker):
             msg.wheels_pair = self.wheels_pair
         return msg
 
-    def update_data(self, corners, position):
-        self.update_real_world_position(position)
+    def update_data(self, corners):
+        # self.update_real_world_position(position)
 
         self.wheels_pair.get_wheels_centers(self.corners, self.center, self.direction)
         self.wheels_pair.update_wheel_edges(self.corners, self.center)
