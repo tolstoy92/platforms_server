@@ -39,9 +39,9 @@ class MarkersAnalizer:
     def update_fields_object_by_id(self, msg_data):
         ids = [object.id for object in msg_data.markers]
         corners = [object.corners for object in msg_data.markers]
-        # positions = [object.real_world_position for object in msg_data.markers]
-        markers_list = list(Marker(marker_id, marker_corners) for \
-                            marker_id, marker_corners in list(zip(ids, corners)))
+        positions = [object.real_world_position for object in msg_data.markers]
+        markers_list = list(Marker(marker_id, marker_corners, rw_position) for \
+                            marker_id, marker_corners, rw_position in list(zip(ids, corners, positions)))
         self.parse_fields_objects_by_id(markers_list)
 
     def ik_callback(self, msg_data):
@@ -65,26 +65,23 @@ class MarkersAnalizer:
     def update_data(self, marker, objects_list, object):
         m_id = marker.id
         corners = marker.corners
-        # position = marker.real_world_position
+        position = marker.real_world_position
         checking_list = [marker.id for marker in objects_list]
         if m_id in checking_list:
             obj = list(filter(lambda obj: obj.id == m_id, objects_list))[0]
-            obj.update_data(corners)
-            # obj.update_real_world_position(position)
+            obj.update_data(corners, position)
+            obj.update_real_world_position(position)
         else:
-            objects_list.append(object(m_id, corners))
+            objects_list.append(object(m_id, corners, position))
 
     def parse_fields_objects_by_id(self, markers_list):
         one_dim_id_markers = []
         two_dim_id_markers = []
         pairs = []
         for marker in markers_list:
-
             if marker.id // 10 == 0:
                 one_dim_id_markers.append(marker)
-                # self.update_robots_data(marker)
             elif marker.id // 10 != 0 and marker.id // 100 == 0:
-                # self.update_goals_data(marker)
                 two_dim_id_markers.append(marker)
 
         if len(one_dim_id_markers) == len(two_dim_id_markers):

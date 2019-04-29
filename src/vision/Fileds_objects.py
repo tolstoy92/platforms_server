@@ -11,6 +11,7 @@ MARKER_SIZE = rospy.get_param('MARKER_SIZE')
 ROBOT_SIZE = rospy.get_param('ROBOT_SIZE')
 ROBOT_H = rospy.get_param('ROBOT_H')
 WHEEL_SIZE = rospy.get_param('WHEEL_SIZE')
+
 CONNECTION_DISTANCE = rospy.get_param('CONNECTION_DISTANCE')
 EPS = rospy.get_param('EPS')
 ANGLE_EPS = rospy.get_param('ANGLE_EPS')
@@ -18,12 +19,12 @@ IK_CONNECTION_AREA = rospy.get_param('IK_CONNECTION_AREA')
 
 
 class Marker:
-    def __init__(self, id, corners):
+    def __init__(self, id, corners, real_world_position):
         self.__marker_size = MARKER_SIZE
         self.id = id
         self.corners = list(Point(xy.x, xy.y) for xy in corners)
         self.center = self.get_center()
-        # self.real_world_position = real_world_position
+        self.real_world_position = real_world_position
 
     def __repr__(self):
         return "ID: {}, center: {}, corners: {}".format(self.id, self.center, self.corners)
@@ -49,12 +50,12 @@ class Marker:
         points = self.points_to_list(ompl_corners)
         return Path(array(points))
 
-    # def update_real_world_position(self, position):
-    #     x, y, z = position.x, position.y, position.z
-    #     if self.real_world_position.is_empty:
-    #         self.real_world_position = RealWorldPoint(x, y, z)
-    #     else:
-    #         self.real_world_position.update_real_world_position(x, y, z)
+    def update_real_world_position(self, position):
+        x, y, z = position.x, position.y, position.z
+        if self.real_world_position.is_empty:
+            self.real_world_position = RealWorldPoint(x, y, z)
+        else:
+            self.real_world_position.update_real_world_position(x, y, z)
 
 
 class MarkersPair(Marker):
@@ -64,6 +65,17 @@ class MarkersPair(Marker):
         self.id = left_marker.id
         self.corners = self.get_pair_corners()
         self.center = self.get_center()
+        self.real_world_position = self.get_real_world_position()
+
+    def get_real_world_position(self):
+        pos1 = self.left_marker.real_world_position
+        pos2 = self.right_marker.real_world_position
+
+        x = (pos1.x + pos2.x) / 2
+        y = (pos1.y + pos2.y) / 2
+        z = (pos1.z + pos2.z) / 2
+
+        return RealWorldPoint(x, y, z)
 
     def get_pair_corners(self):
         left_corner1, left_corner2 = self.left_marker.corners[0], self.left_marker.corners[3]
@@ -72,8 +84,8 @@ class MarkersPair(Marker):
 
 
 class Robot(Marker):
-    def __init__(self, id, corners):
-        Marker.__init__(self, id, corners)
+    def __init__(self, id, corners, real_world_position):
+        Marker.__init__(self, id, corners, real_world_position)
         self.__robot_size = ROBOT_SIZE
         self.__marker_size = MARKER_SIZE
 
@@ -127,7 +139,7 @@ class Robot(Marker):
             msg.direction = self.direction
         msg.corners = self.corners
         msg.path_created = self.path_created
-        # msg.real_world_position = self.real_world_position
+        msg.real_world_position = self.real_world_position
         if self.path_created:
             msg.path = self.path
         if not self.actual_point.is_empty():
@@ -155,8 +167,8 @@ class Robot(Marker):
             msg.wheels_pair = self.wheels_pair
         return msg
 
-    def update_data(self, corners):
-        # self.update_real_world_position(position)
+    def update_data(self, corners, position):
+        self.update_real_world_position(position)
 
         self.wheels_pair.get_wheels_centers(self.corners, self.center, self.direction)
         self.wheels_pair.update_wheel_edges(self.corners, self.center)
@@ -280,14 +292,9 @@ class Robot(Marker):
     def on_point(self, point):
         if point:
             if not point.is_heading:
-                distance_to_point = get_distance_between_points(self.center, point)
-                return distance_to_point <= EPS
+                return get_distance_between_points(self.center, point) <= EPS
             else:
-                if get_angle_by_3_points(self.direction, point, self.center) <= ANGLE_EPS:
-                    return True
-                    self.actual_point = Point()
-                else:
-                    return False
+                return get_angle_by_3_points(self.direction, point, self.center) <= ANGLE_EPS
         else:
             return False
 
